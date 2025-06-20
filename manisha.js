@@ -290,53 +290,56 @@ cmd({
     pattern: "xvideos",
     alias: ["xvdl", "xvdown"],
     react: "🔞",
-    desc: "Download xvideo.com porn video",
+    desc: "Download xvideos.com porn video",
     category: "download",
-    use: '.xvideo < search text >',
+    use: '.xvideos <search text>',
     filename: __filename
 },
 async (conn, mek, m, { from, quoted, reply, q }) => {
     try {
-        if (!q) return await reply("Please provide a search term! 🔍");
+        if (!q) return reply("🔍 Please provide a search term!");
 
+        // Search for videos
         const xv_list = await fetchJson(`${apilink}/search/xvideo?q=${encodeURIComponent(q)}`);
-
         if (!xv_list?.result || xv_list.result.length === 0) {
-            return await reply("No results found! ❌");
+            return reply("❌ No results found!");
         }
 
         const video_url = xv_list.result[0].url;
+        if (!video_url) return reply("❗ Failed to retrieve video URL.");
+
+        // Get video details
         const xv_info = await fetchJson(`${apilink}/download/xvideo?url=${video_url}`);
+        if (!xv_info?.result?.dl_link) return reply("❌ Failed to get download link.");
 
-        const msg = `╭────────────●●►\n\n*MANISHA-MD XVIDEO DOWNLOADER*\n• *litle* - ${xv_info.result.title}\n• *views* - ${xv_info.result.views}\n• *like* - ${xv_info.result.like}\n• *deslike* - ${xv_info.result.deslike}\n• *size* - ${xv_info.result.size}\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_\n╰────────────●●►`;
+        const msg = `╭────────────●●►\n\n*🔞 MANISHA-MD XVIDEOS DOWNLOADER 🔞*\n\n📌 *Title* : ${xv_info.result.title}\n👁️ *Views* : ${xv_info.result.views}\n👍 *Likes* : ${xv_info.result.like}\n👎 *Dislikes* : ${xv_info.result.deslike}\n📦 *Size* : ${xv_info.result.size}\n\n_🛠️ Created by: Manisha Coder_\n╰────────────●●►`;
 
-        // Thumbnail + Info
-        const sentMsg = await conn.sendMessage(from, {
-          text: msg,
-          contextInfo: {
-          externalAdReply: {
-              title: `MANISHA-MD Xvideo Downloader`,
-              body: ``,
-              thumbnailUrl: xv_info.result.image,
-              sourceUrl: ``,
-              mediaType: 1,
-              renderLargerThumbnail: true
-              }
-                  }
-              }, { quoted: mek });
+        // Send video info with thumbnail
+        await conn.sendMessage(from, {
+            text: msg,
+            contextInfo: {
+                externalAdReply: {
+                    title: "MANISHA-MD XVIDEOS Downloader",
+                    body: "Xvideos Video Downloader by Manisha",
+                    thumbnailUrl: xv_info.result.image,
+                    sourceUrl: video_url,
+                    mediaType: 1,
+                    renderLargerThumbnail: true
+                }
+            }
+        }, { quoted: mek });
 
-        // Actual Video
+        // Send actual video as document
         const fileName = xv_info.result.title.endsWith('.mp4') ? xv_info.result.title : xv_info.result.title + '.mp4';
-
         await conn.sendMessage(from, {
             document: { url: xv_info.result.dl_link },
-            mimetype: "video/mp4",
+            mimetype: 'video/mp4',
             fileName: fileName
         }, { quoted: mek });
 
     } catch (error) {
-        console.log("🚨 Error in xvideo command:", error);
-        await reply("Nothing can be downloaded. ❗\n\nError: " + error.message);
+        console.error("🚨 Error in xvideos command:", error);
+        await reply("❌ Unable to download.\n\n🧾 Error: " + error.message);
     }
 });
 
