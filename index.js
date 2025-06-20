@@ -30,19 +30,21 @@ const {
   const config = require('./config')
 
 // ===================== CLI ARGUMENT OVERRIDE =====================
-const cli_session = process.argv[2] || null;
-const cli_mode = process.argv[3] || 'public';
-const cli_prefix = process.argv[4] || '.';
+// Env Variable Set
+process.env['SESSION_ID'] = process.env.SESSION_ID || 'DEFAULT_SESSION';
+process.env['OWNER_NUMBER'] = process.env.OWNER_NUMBER || '9471xxxxxxx';
+process.env['PREFIX'] = process.env.PREFIX || '.';
 
-if (cli_session) config.SESSION_ID = cli_session;
-if (cli_mode) config.MODE = cli_mode;
-if (cli_prefix) config.PREFIX = cli_prefix;
+// Set globals
+global.owner = [process.env.OWNER_NUMBER];
+global.prefix = process.env.PREFIX;
 
-console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 CLI Boot 💡..:", {
-  SESSION_ID: config.SESSION_ID,
-  MODE: config.MODE,
-  PREFIX: config.PREFIX
-});
+// Log status
+console.log('====================================');
+console.log('✅ Session ID   :', process.env.SESSION_ID);
+console.log('✅ Owner Number :', process.env.OWNER_NUMBER);
+console.log('✅ Prefix       :', process.env.PREFIX);
+console.log('====================================');
 // =================================================================
 
   const qrcode = require('qrcode-terminal')
