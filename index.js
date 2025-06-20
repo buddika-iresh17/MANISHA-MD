@@ -30,23 +30,6 @@ const {
   const config = require('./config')
 
 // ===================== CLI ARGUMENT OVERRIDE =====================
-// Env Variable Set
-process.env['SESSION_ID'] = process.env.SESSION_ID || 'DEFAULT_SESSION';
-process.env['OWNER_NUMBER'] = process.env.OWNER_NUMBER || '9471xxxxxxx';
-process.env['PREFIX'] = process.env.PREFIX || '.';
-
-// Set globals
-global.owner = [process.env.OWNER_NUMBER];
-global.prefix = process.env.PREFIX;
-
-// Log status
-console.log('====================================');
-console.log('✅ Session ID   :', process.env.SESSION_ID);
-console.log('✅ Owner Number :', process.env.OWNER_NUMBER);
-console.log('✅ Prefix       :', process.env.PREFIX);
-console.log('====================================');
-// =================================================================
-
   const qrcode = require('qrcode-terminal')
   const StickersTypes = require('wa-sticker-formatter')
   const util = require('util')
@@ -89,6 +72,7 @@ if (!fs.existsSync('./creds.json')) {
   filer.download((err, data) => {
     if (err) throw err
     fs.writeFile('./creds.json', data, () => {
+      console.log("╭────────────●●►")
       console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 session id scaning 🔄...")
       console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Session Downloaded without folder 📥...")
       console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Session Downloading 📥...")
@@ -148,6 +132,7 @@ conn.ev.on('connection.update', async (update) => {
     console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Connected Successfully ✅...");
     console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Executing ✅...");
     console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 creatad by manisha coder 👨‍💻...");
+    console.log("╰────────────●●►")
 
     let up = `╭────────────●●►\n\nMANISHA-MD bot connected successful ✅\n\nPREFIX: ${prefix}\n\nMODE: ${config.MODE}\n\nOWNER:94721551183\n\n╰────────────●●►`;
 
