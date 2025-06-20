@@ -45,7 +45,6 @@ const API_KEY = config.MOVIE_API_KEY;
 
 const getBotOwner = (conn) => conn.user.id.split(":")[0];
 
-// Settings map
 const settingsMap = {
   "1": { key: "MODE", trueVal: "private", falseVal: "public", label: "Bot Mode" },
   "2": { key: "AUTO_REACT", trueVal: "true", falseVal: "false", label: "Auto-React" },
@@ -63,7 +62,6 @@ const settingsMap = {
   },
 };
 
-// Your command registration method, e.g., cmd or similar
 cmd({
   pattern: "settings",
   alias: ["config"],
@@ -80,18 +78,18 @@ cmd({
       return conn.sendMessage(from, { text: "*📛 Only the bot owner can use this command!*" });
     }
 
-    // Send the settings menu with the image and caption
     const sentMsg = await conn.sendMessage(from, {
       image: { url: config.ALIVE_IMG },
-      caption:`╭━━━〔 ⚙️ *ᴍᴀɴɪꜱʜᴀ-ᴍᴅ ꜱᴇᴛᴛɪɴɢ* ⚙️ 〕━━━┈⊷\n\n` +
+      caption:
+        `╭━━━〔 ⚙️ *ᴍᴀɴɪꜱʜᴀ-ᴍᴅ ꜱᴇᴛᴛɪɴɢ* ⚙️ 〕━━━┈⊷\n\n` +
         `1️⃣. ʙᴏᴛ ᴍᴏᴅᴇ (ᴘʀɪᴠᴀᴛᴇ / ᴘᴜʙʟɪᴄ)\n` +
         `2️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴄᴛ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `3️⃣. ᴀᴜᴛᴏ-ʀᴇᴅ-ꜱᴛᴀᴛᴜꜱ (ᴏɴ / ᴏꜰꜰ)\n` +
+        `3️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴅ-ꜱᴛᴀᴛᴜꜱ (ᴏɴ / ᴏꜰꜰ)\n` +
         `4️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʀᴇᴘʟʏ (ᴏɴ / ᴏꜰꜰ)\n` +
         `5️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʟɪᴋᴇ (ᴏɴ / ᴏꜰꜰ)\n` +
         `6️⃣. ʀᴇᴀᴅ-ᴍᴇꜱꜱᴀɢᴇ (ᴏɴ / ᴏꜰꜰ)\n` +
         `7️⃣. ᴀɴᴛɪ-ʟɪɴᴋ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `8️⃣. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ (ᴏɴ / ᴏꜰꜰ)\n`+
+        `8️⃣. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ (ᴏɴ / ᴏꜰꜰ)\n` +
         `9️⃣. ᴀɴᴛɪ-ʟɪɴᴋ-ᴋɪᴄᴋ (ᴏɴ / ᴏꜰꜰ)\n` +
         `🔟. ᴀɴᴛɪ-ᴅᴇʟᴇᴛ-ᴘᴀᴛʜ (ʟᴏɢ / ᴄʜᴀᴛ / ɪɴʙᴏx)\n\n` +
         `*ʀᴇᴘʟʏ ᴡɪᴛʜ ᴛʜᴇ ɴᴜᴍʙᴇʀ*.\n\n` +
@@ -101,15 +99,17 @@ cmd({
 
     const menuMessageID = sentMsg.key.id;
 
-    // Listen for reply to the menu message to pick setting number
     const menuListener = async (msgData) => {
       try {
         const received = msgData.messages[0];
         if (!received || received.key.remoteJid !== from) return;
 
+        const message = received.message;
+        if (!message) return;
+
         const sender = (received.key.participant || received.key.remoteJid).split("@")[0];
-        const isReply = received.message?.extendedTextMessage?.contextInfo?.stanzaId === menuMessageID;
-        const text = received.message.conversation || received.message.extendedTextMessage?.text;
+        const isReply = message.extendedTextMessage?.contextInfo?.stanzaId === menuMessageID;
+        const text = message.conversation || message.extendedTextMessage?.text;
 
         if (!isReply || sender !== botOwner || !text) return;
 
@@ -117,28 +117,29 @@ cmd({
         const setting = settingsMap[settingOption];
 
         if (!setting) {
-          await conn.sendMessage(from, { text: "❌ Invalid option. Please reply with a number from 1 to 9." });
+          await conn.sendMessage(from, { text: "❌ Invalid option. Please reply with a number from 1 to 10." });
           return;
         }
 
-        // Show toggle options
         const settingMsg = await conn.sendMessage(from, {
           text: setting.customOptions
-            ? `*${setting.label}:*\n\n${setting.customOptions.map((opt, i) => `${i + 1}. ${opt.toUpperCase()}`).join("\n")}\n\n_Reply with number to toggle._`
-            : `*${setting.label}:*\n\n1. ${setting.trueVal.toUpperCase()}\n2. ${setting.falseVal.toUpperCase()}\n\n_Reply with number to toggle._`
+            ? `╭────────────●●►\n*${setting.label}:*\n\n${setting.customOptions.map((opt, i) => `${i + 1}. ${opt.toUpperCase()}`).join("\n")}\n\n_Reply with number to toggle._\n╰────────────●●►`
+            : `╭────────────●●►\n*${setting.label}:*\n\n1. ${setting.trueVal.toUpperCase()}\n2. ${setting.falseVal.toUpperCase()}\n\n_Reply with number to toggle._\n╰────────────●●►`
         });
 
         const toggleID = settingMsg.key.id;
 
-        // Listen for toggle reply
         const toggleListener = async (msgData2) => {
           try {
             const received2 = msgData2.messages[0];
             if (!received2 || received2.key.remoteJid !== from) return;
 
+            const message2 = received2.message;
+            if (!message2) return;
+
             const sender2 = (received2.key.participant || received2.key.remoteJid).split("@")[0];
-            const isReplyToToggle = received2.message?.extendedTextMessage?.contextInfo?.stanzaId === toggleID;
-            const text2 = received2.message.conversation || received2.message.extendedTextMessage?.text;
+            const isReplyToToggle = message2.extendedTextMessage?.contextInfo?.stanzaId === toggleID;
+            const text2 = message2.conversation || message2.extendedTextMessage?.text;
 
             if (!isReplyToToggle || sender2 !== botOwner || !text2) return;
 
@@ -175,6 +176,7 @@ cmd({
 
         conn.ev.on("messages.upsert", toggleListener);
         conn.ev.off("messages.upsert", menuListener);
+
       } catch (err) {
         console.error("Settings Menu Error:", err);
       }
