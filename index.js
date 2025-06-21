@@ -132,6 +132,9 @@ conn.ev.on('connection.update', async (update) => {
     console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Connected Successfully ✅...");
     console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Executing ✅...");
     console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 creatad by manisha coder 👨‍💻...");
+    console.log(" ${config.SESSION_ID}");
+    console.log("${config.MODE}");
+    console.log("${prefix}");
     console.log("╰────────────●●►")
 
     let up = `╭────────────●●►\n\nMANISHA-MD bot connected successful ✅\n\nPREFIX: ${prefix}\n\nMODE: ${config.MODE}\n\nOWNER:94721551183\n\n╰────────────●●►`;
