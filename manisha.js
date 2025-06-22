@@ -1588,7 +1588,7 @@ cmd(
   async (conn, mek, m, { from, quoted, reply }) => {
     try {
       const start = new Date().getTime();
-      const pingMsg = await reply("```Pinging...```");
+      const pingMsg = await reply("```ᴘɪɴɢɪɴɢ...```");
       const end = new Date().getTime();
 
       const speed = end - start;
@@ -1611,11 +1611,7 @@ cmd(
         },
       });
 
-      const caption = `\`\`\`╭─────────────◆
-│   BOT IS ONLINE ✅
-│   SPEED: ${speed}ms
-│   STATUS: ${reactionText}
-╰─────────────◆\`\`\``;
+      const caption = `\`\`\`╔══╣❍*ᴍᴀɴɪꜱʜᴀ-ᴍᴅ*❍╠═══⫸\n╠➢ SPEED: ${speed}ms\n╠➢ STATUS: ${reactionText}\n╚═══════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_\`\`\``;
 
       // Default fallback image if config.ALIVE_IMG not set
       const imageUrl = config.ALIVE_IMG || "https://files.catbox.moe/vbi10j.png";
