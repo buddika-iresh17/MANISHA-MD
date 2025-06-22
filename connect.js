@@ -732,7 +732,7 @@ async function getAnti() {
 //***************** ANTIDELET2 .JS ********************
 const DeletedText = async (conn, mek, jid, deleteInfo, isGroup, update) => {
     const messageContent = mek.message?.conversation || mek.message?.extendedTextMessage?.text || 'Unknown content';
-    deleteInfo += `\n💬 *Content:* ${messageContent}`;
+    deleteInfo += `╔══════════════⫸\n💬 *Content:* ${messageContent}\n╚═════════════════════⫸`;
 
     await conn.sendMessage(
         jid,
@@ -788,15 +788,13 @@ const AntiDelete = async (conn, updates) => {
                     const sender = mek.key.participant?.split('@')[0];
                     const deleter = update.key.participant?.split('@')[0];
 
-                    deleteInfo = `*MANISHA-MD*\n\n*SENDER:* @${sender}
-*GROUP NAME:* ${groupName}
-*DELETE TIME:* ${deleteTime}\n*DELETER:* @${deleter}\n\n_DELETE A MASSAGE_\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
+                    deleteInfo = `╔══╣❍*ᴍᴀɴɪꜱʜᴀ-ᴍᴅ*❍╠═══⫸\n╠➢ *SENDER:* @${sender}\n╠➢ *GROUP NAME:* ${groupName}\n╠➢ *DELETE TIME:* ${deleteTime}\n╠➢ *DELETER:* @${deleter}\n_DELETE A MASSAGE_\n╚════════════════⫸`;
                     jid = config.ANTI_DEL_PATH === "inbox" ? conn.user.id : store.jid;
                 } else {
                     const senderNumber = mek.key.remoteJid?.split('@')[0];
                     const deleterNumber = update.key.remoteJid?.split('@')[0];
                     
-                    deleteInfo = `*MANISHA-MD*\n\n*SENDER:* @${senderNumber}\n*DELETE TIME:* ${deleteTime}\n\n_DELETE A MASSAGE_\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
+                    deleteInfo = `╔══╣❍*ᴍᴀɴɪꜱʜᴀ-ᴍᴅ*❍╠═══⫸\n╠➢ *SENDER:* @${senderNumber}\n╠➢ *DELETE TIME:* ${deleteTime}\n╠➢ _DELETE A MASSAGE_\n╚═════════⫸`;
                     jid = config.ANTI_DEL_PATH === "inbox" ? conn.user.id : update.key.remoteJid;
                 }
 

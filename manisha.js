@@ -10,6 +10,9 @@ const os = require("os")
 //╭────────────●●►
 const fs = require("fs");
 //╰────────────●●►
+//STIKER AND REPLY
+const storage = require('node-persist');
+//================
 const fse = require('fs-extra');
 const path = require('path');
 const fetch = require('node-fetch');
@@ -31,7 +34,7 @@ const l = console.log
 const ytdl = require('yt-search');
 var videotime = 60000 // 1000 min
 //====================== AI API ================
-const GEMINI_API_KEY = config.GEMINI_API_KEY;  //REPLACE WITH YOUR API KEY OF GEMINI
+const GEMINI_API_KEY = config.GEMINI_API_KEY;
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 //============================================
 //========== MOVIE API ==============
@@ -39,10 +42,6 @@ const API_URL = "https://api.skymansion.site/movies-dl/search";
 const DOWNLOAD_URL = "https://api.skymansion.site/movies-dl/download";
 const API_KEY = config.MOVIE_API_KEY;
 //================SETTINGS COMMAND===================
-// Helper to get bot owner number
-// Assume conn is your Baileys connection instance
-// Assume config is your config object holding settings & ALIVE_IMG URL
-
 const getBotOwner = (conn) => conn.user.id.split(":")[0];
 
 const settingsMap = {
@@ -53,13 +52,9 @@ const settingsMap = {
   "5": { key: "AUTOLIKESTATUS", trueVal: "true", falseVal: "false", label: "Auto-like-status" },
   "6": { key: "READ_MESSAGE", trueVal: "true", falseVal: "false", label: "Read-message" },
   "7": { key: "ANTI_LINK", trueVal: "true", falseVal: "false", label: "Anti-link" },
-  "8": { key: "ANTI_DELETE", trueVal: "true", falseVal: "false", label: "Anti-delete" },
-  "9": { key: "ANTI_LINK_KICK", trueVal: "true", falseVal: "false", label: "Anti-link-kick" },
-  "10": {
-    key: "ANTI_DEL_PATH",
-    label: "Anti-delete Path",
-    customOptions: ["log", "chat", "inbox"],
-  },
+  "8": { key: "ANTI_LINK_KICK", trueVal: "true", falseVal: "false", label: "Anti-link-kick" },
+  "9": { key: "ANTI_DEL_PATH", label: "Anti-delete Path", customOptions: ["log", "chat", "inbox"] },
+  "10": { key: "ANTIDELETE", trueVal: "true", falseVal: "false", label: "Anti-Delete" }
 };
 
 cmd({
@@ -81,20 +76,19 @@ cmd({
     const sentMsg = await conn.sendMessage(from, {
       image: { url: config.ALIVE_IMG },
       caption:
-        `╭━━━〔 ⚙️ *ᴍᴀɴɪꜱʜᴀ-ᴍᴅ ꜱᴇᴛᴛɪɴɢ* ⚙️ 〕━━━┈⊷\n\n` +
-        `1️⃣. ʙᴏᴛ ᴍᴏᴅᴇ (ᴘʀɪᴠᴀᴛᴇ / ᴘᴜʙʟɪᴄ)\n` +
-        `2️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴄᴛ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `3️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴅ-ꜱᴛᴀᴛᴜꜱ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `4️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʀᴇᴘʟʏ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `5️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʟɪᴋᴇ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `6️⃣. ʀᴇᴀᴅ-ᴍᴇꜱꜱᴀɢᴇ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `7️⃣. ᴀɴᴛɪ-ʟɪɴᴋ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `8️⃣. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `9️⃣. ᴀɴᴛɪ-ʟɪɴᴋ-ᴋɪᴄᴋ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `🔟. ᴀɴᴛɪ-ᴅᴇʟᴇᴛ-ᴘᴀᴛʜ (ʟᴏɢ / ᴄʜᴀᴛ / ɪɴʙᴏx)\n\n` +
-        `*ʀᴇᴘʟʏ ᴡɪᴛʜ ᴛʜᴇ ɴᴜᴍʙᴇʀ*.\n\n` +
-        `> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_\n\n` +
-        `╰━━━━━━━━━━━━━━━━━━┈⊷`
+        `╔═══╣❍*ꜱᴇᴛᴛɪɴɢ*❍╠═══⫸\n` +
+        `╠➢ 1️⃣. ʙᴏᴛ ᴍᴏᴅᴇ (ᴘʀɪᴠᴀᴛᴇ / ᴘᴜʙʟɪᴄ)\n` +
+        `╠➢ 2️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴄᴛ (ᴏɴ / ᴏꜰꜰ)\n` +
+        `╠➢ 3️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴅ-ꜱᴛᴀᴛᴜꜱ (ᴏɴ / ᴏꜰꜰ)\n` +
+        `╠➢ 4️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʀᴇᴘʟʏ (ᴏɴ / ᴏꜰꜰ)\n` +
+        `╠➢ 5️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʟɪᴋᴇ (ᴏɴ / ᴏꜰꜰ)\n` +
+        `╠➢ 6️⃣. ʀᴇᴀᴅ-ᴍᴇꜱꜱᴀɢᴇ (ᴏɴ / ᴏꜰꜰ)\n` +
+        `╠➢ 7️⃣. ᴀɴᴛɪ-ʟɪɴᴋ (ᴏɴ / ᴏꜰꜰ)\n` +
+        `╠➢ 8️⃣. ᴀɴᴛɪ-ʟɪɴᴋ-ᴋɪᴄᴋ (ᴏɴ / ᴏꜰꜰ)\n` +
+        `╠➢ 9️⃣. ᴀɴᴛɪ-ᴅᴇʟᴇᴛ-ᴘᴀᴛʜ (ʟᴏɢ / ᴄʜᴀᴛ / ɪɴʙᴏx)\n` +
+        `╠➢ 🔟. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ (ᴏɴ / ᴏꜰꜰ)\n` +
+        `╚════════════════════⫸\n\n` +
+        `> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
     });
 
     const menuMessageID = sentMsg.key.id;
@@ -123,8 +117,8 @@ cmd({
 
         const settingMsg = await conn.sendMessage(from, {
           text: setting.customOptions
-            ? `╭────────────●●►\n*${setting.label}:*\n\n${setting.customOptions.map((opt, i) => `${i + 1}. ${opt.toUpperCase()}`).join("\n")}\n\n_Reply with number to toggle._\n╰────────────●●►`
-            : `╭────────────●●►\n*${setting.label}:*\n\n1. ${setting.trueVal.toUpperCase()}\n2. ${setting.falseVal.toUpperCase()}\n\n_Reply with number to toggle._\n╰────────────●●►`
+            ? `╔═════⫸\n╠➢*${setting.label}:*\n╠➢${setting.customOptions.map((opt, i) => `${i + 1}. ${opt.toUpperCase()}`).join("\n")}\n╠➢ _Reply with number._\n╚═══════⫸`
+            : `╔═════⫸\n╠➢*${setting.label}:*\n\n╠➢1. ${setting.trueVal.toUpperCase()}\n╠➢2. ${setting.falseVal.toUpperCase()}\n╠➢ _Reply with number._\n╚════⫸`
         });
 
         const toggleID = settingMsg.key.id;
@@ -157,16 +151,29 @@ cmd({
                 await conn.sendMessage(from, { text: "❌ Invalid option. Please choose a valid number." });
               }
             } else {
-              if (response === "1") {
-                config[setting.key] = setting.trueVal;
-                await conn.sendMessage(from, { text: `✅ *${setting.label} set to ${setting.trueVal.toUpperCase()}.*` });
-                conn.ev.off("messages.upsert", toggleListener);
-              } else if (response === "2") {
-                config[setting.key] = setting.falseVal;
-                await conn.sendMessage(from, { text: `✅ *${setting.label} set to ${setting.falseVal.toUpperCase()}.*` });
+              if (setting.key === "ANTIDELETE") {
+                const enable = response === "1";
+                await setAnti(enable);
+                await conn.sendMessage(from, {
+                  text: `✅ *${setting.label} set to ${enable ? "ON" : "OFF"}.*`
+                });
                 conn.ev.off("messages.upsert", toggleListener);
               } else {
-                await conn.sendMessage(from, { text: "❌ Invalid option. Please reply with 1 or 2." });
+                if (response === "1") {
+                  config[setting.key] = setting.trueVal;
+                  await conn.sendMessage(from, {
+                    text: `✅ *${setting.label} set to ${setting.trueVal.toUpperCase()}.*`
+                  });
+                  conn.ev.off("messages.upsert", toggleListener);
+                } else if (response === "2") {
+                  config[setting.key] = setting.falseVal;
+                  await conn.sendMessage(from, {
+                    text: `✅ *${setting.label} set to ${setting.falseVal.toUpperCase()}.*`
+                  });
+                  conn.ev.off("messages.upsert", toggleListener);
+                } else {
+                  await conn.sendMessage(from, { text: "❌ Invalid option. Please reply with 1 or 2." });
+                }
               }
             }
           } catch (err2) {
@@ -264,7 +271,7 @@ cmd({
             return reply("Failed to fetch the video. Please try again later.");
         }
 
-        let ytmsg = `╭──────────●●►\n*⭕ᴍᴀɴɪꜱʜᴀ-ᴍᴅ ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ⭕*\n\n*⭕ᴛɪᴛʟᴇ:* ${yts.title}\n*⭕ᴅᴜʀᴀᴛɪᴏɴ:* ${yts.timestamp}\n*⭕ᴠɪᴡᴇꜱ:* ${yts.views}\n*⭕ᴀᴜᴛʜᴏʀ:* ${yts.author.name}\n*⭕ʟɪɴᴋ:* ${yts.url}\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_\n╰──────────●●►`;
+        let ytmsg = `╔══╣❍*ᴠɪᴅᴇᴏ*❍╠═══⫸\n╠➢ *ᴛɪᴛʟᴇ:* ${yts.title}\n╠➢ *ᴅᴜʀᴀᴛɪᴏɴ:* ${yts.timestamp}\n╠➢ *ᴠɪᴡᴇꜱ:* ${yts.views}\n╠➢ *ᴀᴜᴛʜᴏʀ:* ${yts.author.name}\n╠➢ *ʟɪɴᴋ:* ${yts.url}\n╚═════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
         // Send video directly with caption
         await conn.sendMessage(
@@ -312,15 +319,15 @@ async (conn, mek, m, { from, quoted, reply, q }) => {
         const xv_info = await fetchJson(`${apilink}/download/xvideo?url=${video_url}`);
         if (!xv_info?.result?.dl_link) return reply("❌ Failed to get download link.");
 
-        const msg = `╭────────────●●►\n\n*🔞 MANISHA-MD XVIDEOS DOWNLOADER 🔞*\n\n📌 *Title* : ${xv_info.result.title}\n👁️ *Views* : ${xv_info.result.views}\n👍 *Likes* : ${xv_info.result.like}\n👎 *Dislikes* : ${xv_info.result.deslike}\n📦 *Size* : ${xv_info.result.size}\n\n_🛠️ Created by: Manisha Coder_\n╰────────────●●►`;
+        const msg = `╔══╣❍*xᴠɪᴅᴇᴏꜱ*❍╠═══⫸\n╠➢ *Title* : ${xv_info.result.title}\n╠➢ *Views* : ${xv_info.result.views}\n╠➢ *Likes* : ${xv_info.result.like}\n╠➢ *Dislikes* : ${xv_info.result.deslike}\n╚═════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
         // Send video info with thumbnail
         await conn.sendMessage(from, {
             text: msg,
             contextInfo: {
                 externalAdReply: {
-                    title: "MANISHA-MD XVIDEOS Downloader",
-                    body: "Xvideos Video Downloader by Manisha",
+                    title: "XVIDEOS DOWNLOADER",
+                    body: "XVIDEOS DOWNLOADER",
                     thumbnailUrl: xv_info.result.image,
                     sourceUrl: video_url,
                     mediaType: 1,
@@ -372,16 +379,12 @@ cmd({
         const video = media.find(m => m.type.includes('720p') || m.type.includes('video'));
         const image = media.find(m => m.type.toLowerCase().includes('image') || m.type.toLowerCase().includes('thumbnail'));
 
-        const caption = `╭━━━〔 *MANISHA-MD* 〕━━━┈⊷
-┃▸╭────────────
-┃▸┃๏ *PINS DOWNLOADER*
-┃▸└────────────···๏
-╰────────────────┈⊷
-╭━━❐━⪼
-┇๏ *Title* - ${title}
-┇๏ *Type* - ${video ? 'Video' : 'Image'}
-╰━━❑━⪼
-> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
+        const caption =
+`╔══╣❍*ᴘɪɴᴛᴇʀᴇꜱᴛᴅʟ*❍╠═══⫸\n` +
+`╠➢ *Title* - ${title}\n` +
+`╠➢ *Type* - ${video ? 'Video' : 'Image'}\n` +
+`╚══════════════════⫸\n\n` +
+`> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
         if (video) {
             await conn.sendMessage(from, { video: { url: video.download_url }, caption }, { quoted: mek });
@@ -428,7 +431,7 @@ cmd({
 
     const { desc, thumb, video_sd, video_hd } = data.result;
 
-    const caption = `*╭──────────●●►*\n> *⭕ᴛᴡɪᴛᴏʀ ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ⭕*\n\n*⭕ᴅᴇꜱᴄʀɪᴘᴛɪᴏɴ:* ${desc || "No description"}\n\n*🎬ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴏᴘᴛɪᴏɴꜱ*\n*1*♦️*SD Quality*\n*2*♦️*HD Quality*\n\n*🎵ᴀᴜᴅɪᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴏᴘᴛɪᴏɴꜱ*\n*3*♦️*Audio*\n*4*♦️*Document*\n*5*♦️*Voice*\n*⭕ʀᴇᴘʟʏ ᴡɪᴛʜ ᴛʜᴇ ɴᴜᴍʙᴇʀ*\n*╰──────────●●►*`;
+    const caption = `╔══╣❍*ᴛᴡɪᴛᴛᴇʀ*❍╠═══⫸\n╠➢ *ᴅᴇꜱᴄʀɪᴘᴛɪᴏɴ:* ${desc || "No description"}\n\n╠➢ *ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴏᴘᴛɪᴏɴꜱ*\n╠➢ 1. *SD Quality*\n╠➢ 2. *HD Quality*\n\n╠➢ *ᴀᴜᴅɪᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴏᴘᴛɪᴏɴꜱ*\n╠➢ 3. *Audio*\n╠➢ 4. *Document*\n╠➢ 4. *Voice*\n╠➢ *ʀᴇᴘʟʏ ᴡɪᴛʜ ᴛʜᴇ ɴᴜᴍʙᴇʀ*\n╚═══════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
     const sentMsg = await conn.sendMessage(from, {
       image: { url: thumb },
@@ -533,7 +536,7 @@ cmd({
         document: { url: downloadUrl },
         mimetype: response.data.result.mimetype,
         fileName: response.data.result.fileName,
-        caption: "> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*"
+        caption: "> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_"
       }, { quoted: m });
 
       await conn.sendMessage(from, { react: { text: "✅", key: m.key } });
@@ -570,7 +573,7 @@ async (conn, mek, m, { from, args, q, reply }) => {
         const { title, like, comment, share, author, meta } = data.data;
         const videoUrl = meta.media.find(v => v.type === "video").org;
         
-        const caption = `╭──────────●●►\n> *⭕ᴛɪᴋᴛᴏᴋ ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ⭕*\n\n*⭕ᴜꜱᴀʀ:* ${author.nickname} (@${author.username})\n*⭕ᴛɪᴛʟᴇ:* ${title}\n*⭕ʟɪᴋᴇ:* ${like}\n*⭕ᴄᴏᴍᴍᴇɴᴛ:* ${comment}\n*⭕ꜱʜᴀʀᴇ:* ${share}\n> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*\n╰──────────●●►`;
+        const caption = `╔══╣❍*ᴛɪᴋᴛᴏᴋ*❍╠═══⫸\n╠➢ *ᴜꜱᴀʀ:* ${author.nickname} (@${author.username})\n╠➢ *ᴛɪᴛʟᴇ:* ${title}\n╠➢ *ʟɪᴋᴇ:* ${like}\n╠➢ *ᴄᴏᴍᴍᴇɴᴛ:* ${comment}\n╠➢ *ꜱʜᴀʀᴇ:* ${share}\n╚════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
         
         await conn.sendMessage(from, {
             video: { url: videoUrl },
@@ -659,7 +662,7 @@ cmd({
       react: { text: "⬆️", key: m.key }
     });
 
-    const caption = `╭──────────●●►\n⭕ᴍᴇᴇᴅɪᴀꜰɪʀᴇ ꜰɪʟᴇ ᴅᴏᴡɴʟᴏᴀᴅ⭕*\n\n*⭕ꜰɪʟᴇ ɴᴀᴍᴇ:* ${file_name}\n*⭕ꜰɪʟᴇ ᴛʏᴘᴇ:* ${mime_type}\n\n> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*\n╰──────────●●►`;
+    const caption = `╔══╣❍*ᴍᴇᴅɪᴀꜰɪʀᴇ*❍╠═══⫸\n╠➢ *ꜰɪʟᴇ ɴᴀᴍᴇ:* ${file_name}\n╠➢ *ꜰɪʟᴇ ᴛʏᴘᴇ:* ${mime_type}\n╚════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
     await conn.sendMessage(from, {
       document: { url: dl_link },
       mimetype: mime_type,
@@ -703,7 +706,7 @@ cmd({
     const app = data.datalist.list[0];
     const appSize = (app.size / 1048576).toFixed(2); // Convert bytes to MB
 
-    const caption = `╭──────────●●►\n> *⭕ᴀᴘᴋ ᴅᴏᴡɴʟᴏᴀᴅ⭕*\n\n*⭕ɴᴀᴍᴇ:* ${app.name}\n*⭕ꜱɪᴢᴇ:* ${appSize}ᴍʙ\n*⭕ᴘᴀᴄᴋᴀɢᴇ:* ${app.package}\n*⭕ᴜᴘᴅᴀᴛᴇᴅ:* ${app.updated}\n*⭕ᴅᴇᴠᴇᴘʟᴏᴘᴇʀ:* ${app.developer.name}\n\n> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*\n╰──────────●●►`;
+    const caption = `╔══╣❍*ᴀᴘᴋ*❍╠═══⫸\n*ɴᴀᴍᴇ:* ${app.name}\n╠➢ *ꜱɪᴢᴇ:* ${appSize}ᴍʙ\n╠➢ *ᴘᴀᴄᴋᴀɢᴇ:* ${app.package}\n╠➢ *ᴜᴘᴅᴀᴛᴇᴅ:* ${app.updated}\n╠➢ *ᴅᴇᴠᴇᴘʟᴏᴘᴇʀ:* ${app.developer.name}\n╚═════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
     await conn.sendMessage(from, { react: { text: "⬆️", key: m.key } });
 
@@ -830,7 +833,7 @@ cmd({
                 document: fs.readFileSync(filePath),
                 mimetype: 'video/mp4',
                 fileName: `${selectedMovie.title}-480p.mp4`,
-                caption: `📌 Quality: 480p\n✅ *Download Complete!*\n\n> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`,
+                caption: `📌 Quality: 480p\n✅ *Download Complete!*\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`,
                 quoted: mek 
             });
             fs.unlinkSync(filePath);
@@ -936,6 +939,38 @@ cmd({
       text: "❌ Error fetching vv message:\n" + error.message
     }, { quoted: message });
   }
+});
+
+
+cmd({
+    pattern: "jid",
+    alias: ["id", "chatid", "gjid"],  
+    desc: "Get full JID of current chat/user (Creator Only)",
+    react: "🆔",
+    category: "owner",
+    filename: __filename,
+}, async (conn, mek, m, { 
+    from, isGroup, isCreator, reply, sender 
+}) => {
+    try {
+        if (!isCreator) {
+            return reply("❌ *Command Restricted* - Only my creator can use this.");
+        }
+
+        if (isGroup) {
+            // Ensure group JID ends with @g.us
+            const groupJID = from.includes('@g.us') ? from : `${from}@g.us`;
+            return reply(`👥 *Group JID:*\n\`\`\`${groupJID}\`\`\``);
+        } else {
+            // Ensure user JID ends with @s.whatsapp.net
+            const userJID = sender.includes('@s.whatsapp.net') ? sender : `${sender}@s.whatsapp.net`;
+            return reply(`👤 *User JID:*\n\`\`\`${userJID}\`\`\``);
+        }
+
+    } catch (e) {
+        console.error("JID Error:", e);
+        reply(`⚠️ Error fetching JID:\n${e.message}`);
+    }
 });
 
 
@@ -1098,12 +1133,12 @@ cmd({
     try{
           
           // Status message to be sent
-          let desc = `╭──────────●●►
-> *♦️ᴏᴡɴᴇʀ :* *94721551183 ...*
-> *♦️ᴡʜᴀᴛꜱᴀᴘᴘ ᴄʜᴀɴɴᴇʟ :* *https://whatsapp.com/channel/0029VbAdMtMGk1G1R9Yg2L3x*
+          let desc = `╔══╣❍*ᴏᴡɴᴇʀ*❍╠═══⫸
+╠➢ *ᴏᴡɴᴇʀ :* *94721551183 ...*
+╠➢ *ᴡʜᴀᴛꜱᴀᴘᴘ ᴄʜᴀɴɴᴇʟ :* *https://whatsapp.com/channel/0029VbAdMtMGk1G1R9Yg2L3x*
+╚═════════════════⫸
 
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*
-╰──────────●●►`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
 
           // Sending the image with caption
 await conn.sendMessage(from,{image: {url: config.ALIVE_IMG},caption: desc},{quoted: mek });
@@ -1127,14 +1162,14 @@ cmd({
     try{
           
           // Status message to be sent
-          let desc = `╭──────────●●►
-> *♦️ʀᴇᴘᴏ:* *https://github.com/manisha-Official18/MANISHA-MD*
-> *♦️ᴏᴡɴᴇʀ :* *94721551183 ...*
-> *♦️ᴠᴇʀꜱɪᴏɴ :* *1.0 ...*
-> *♦️ᴡʜᴀᴛꜱᴀᴘᴘ ᴄʜᴀɴɴᴇʟ : https://whatsapp.com/channel/0029VbAdMtMGk1G1R9Yg2L3x*
+          let desc = `╔══╣❍*ʀᴇᴘᴏ*❍╠═══⫸
+╠➢ *ʀᴇᴘᴏ:* *https://github.com/manisha-Official18/MANISHA-MD*
+╠➢ *ᴏᴡɴᴇʀ :* *94721551183 ...*
+╠➢ *ᴠᴇʀꜱɪᴏɴ :* *1.0 ...*
+╠➢ *ᴡʜᴀᴛꜱᴀᴘᴘ ᴄʜᴀɴɴᴇʟ : https://whatsapp.com/channel/0029VbAdMtMGk1G1R9Yg2L3x*
+╚════════════════⫸
 
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*
-╰──────────●●►`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
 
           // Sending the image with caption
 await conn.sendMessage(from,{image: {url: config.ALIVE_IMG},caption: desc},{quoted: mek });
@@ -1158,14 +1193,14 @@ cmd({
     try{
           
           // Status message to be sent
-          let desc = `╭──────────●●►
-> *♦️ᴘᴏᴡᴇʀꜰᴜʟʟ ᴊᴀᴠᴀꜱᴄʀɪᴘᴛ ᴡʜᴀᴛꜱᴀᴘᴘ ʙᴏᴛ ...*
-> *♦️ᴏᴡɴᴇʀ : 94721551183 ...*
-> *♦️ᴠᴇʀꜱɪᴏɴ :* *1.0 ...*
-> *♦️ᴡʜᴀᴛꜱᴀᴘᴘ ᴄʜᴀɴɴᴇʟ : https://whatsapp.com/channel/0029VbAdMtMGk1G1R9Yg2L3x*
+          let desc = `╔══╣❍*ᴀʟɪᴠᴇ*❍╠═══⫸
+╠➢ *ᴘᴏᴡᴇʀꜰᴜʟʟ ᴊᴀᴠᴀꜱᴄʀɪᴘᴛ ᴡʜᴀᴛꜱᴀᴘᴘ ʙᴏᴛ ...*
+╠➢ *ᴏᴡɴᴇʀ : 94721551183 ...*
+╠➢ *ᴠᴇʀꜱɪᴏɴ :* *1.0 ...*
+╠➢ *ᴡʜᴀᴛꜱᴀᴘᴘ ᴄʜᴀɴɴᴇʟ : https://whatsapp.com/channel/0029VbAdMtMGk1G1R9Yg2L3x*
+╚═════════════════⫸
 
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*
-╰──────────●●►`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
 
           // Sending the image with caption
 await conn.sendMessage(from,{image: {url: config.ALIVE_IMG},caption: desc},{quoted: mek });
@@ -1185,7 +1220,7 @@ cmd({
     filename: __filename
 }, async (conn, mek, m, { from, reply }) => {
     try {
-        const menuCaption = `╭━━━〔 *MANISHA-MD* 〕━━━┈⊷
+        const menuCaption = `╭━━━〔 *ᴍᴀɴɪꜱʜᴀ-ᴍᴅ* 〕━━━┈⊷
 ┃★╭──────────────
 ┃★│ 👑 Owner : *ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*
 ┃★│ ⚙️ Mode : *${config.MODE}*
@@ -1193,7 +1228,7 @@ cmd({
 ┃★│ 🏷️ Version : *1.0*
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-╭━━〔 *Menu List* 〕━━┈⊷
+╭━━〔 *ᴍᴇɴᴜ ʟɪꜱᴛ* 〕━━┈⊷
 ┃◈╭─────────────·๏
 ┃◈│ *1*   📥 *Download Menu*
 ┃◈│ *2*   😄 *Fun Menu*
@@ -1209,7 +1244,7 @@ cmd({
 ┃◈│ *12*  👥 *Group Menu*
 ┃◈╰───────────┈⊷
 ╰──────────────┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`;
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
         const sentMsg = await conn.sendMessage(from, {
             image: { url: config.ALIVE_IMG },
@@ -1249,7 +1284,7 @@ cmd({
 ┃★│ • img [query]
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
                         }, { quoted: receivedMsg });
                         break;
 
@@ -1265,7 +1300,7 @@ cmd({
 ┃★│ • spam
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
                         }, { quoted: receivedMsg });
                         break;
 
@@ -1279,9 +1314,10 @@ cmd({
 ┃★│ • blocklist
 ┃★│ • setpp
 ┃★│ • vv
+┃★│ • jid
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
                         }, { quoted: receivedMsg });
                         break;
 
@@ -1295,7 +1331,7 @@ cmd({
 ┃★│ • openai [query]
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
                         }, { quoted: receivedMsg });
                         break;
 
@@ -1307,7 +1343,7 @@ cmd({
 ┃★│ • sticker [img]
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
                         }, { quoted: receivedMsg });
                         break;
 
@@ -1322,7 +1358,7 @@ cmd({
 ┃★│ • vcc 
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
                         }, { quoted: receivedMsg });
                         break;
 
@@ -1339,7 +1375,7 @@ cmd({
 ┃★│ • runtime
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
                         }, { quoted: receivedMsg });
                         break;
 
@@ -1350,7 +1386,7 @@ cmd({
 ┃★│ • sinhalasub [name]
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
                         }, { quoted: receivedMsg });
                         break;
 
@@ -1361,7 +1397,7 @@ cmd({
 ┃★│ • gitclone [repo link]
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
                         }, { quoted: receivedMsg });
                         break;
 
@@ -1373,7 +1409,7 @@ cmd({
 ┃★│ • mvs
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
                         }, { quoted: receivedMsg });
                         break;
                         
@@ -1384,7 +1420,7 @@ cmd({
 ┃★│ • settings
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
                         }, { quoted: receivedMsg });
                         break;
                         
@@ -1401,9 +1437,11 @@ cmd({
 ┃★│ • kickall
 ┃★│ • promote
 ┃★│ • demote
+┃★│ • acceptall
+┃★│ • rejectall
 ┃★╰──────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
                         }, { quoted: receivedMsg });
                         break;
 
@@ -1453,15 +1491,13 @@ menu[commands[i].category] += `.${commands[i].pattern}\n`;
 }
    
 
-let desc = `*👋 Hello ${pushname}*
-          
-*╭─「 ᴄᴏᴍᴍᴀɴᴅ ᴘᴀɴᴇʟ 」*
-*│◈ ʀᴜɴᴛɪᴍᴇ : ${runtime(process.uptime())}*
-*│◈ ʀᴀᴍ ᴜꜱᴀɢᴇ : ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB*
-*│◈ ᴘʟᴀᴛꜰᴏʀᴍ : ${os.hostname()}*
-*│◈ ᴠᴇʀꜱɪᴏɴ : 1.0*
-*╰──────────●●►*
-╭──────────●●►
+let desc = `╔══╣❍*ᴀʟʟ ᴍᴇɴᴜ*❍╠═══⫸
+╠➢ *ʀᴜɴᴛɪᴍᴇ : ${runtime(process.uptime())}*
+╠➢ *ʀᴀᴍ ᴜꜱᴀɢᴇ : ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB*
+╠➢ *ᴘʟᴀᴛꜰᴏʀᴍ : ${os.hostname()}*
+╠➢ *ᴠᴇʀꜱɪᴏɴ : 1.0*
+╚══════════════⫸
+╔════════════════⫸
  📥 *Download Menu*
  ──────
  ${menu.download}
@@ -1505,9 +1541,9 @@ let desc = `*👋 Hello ${pushname}*
  ⚙️ *settings menu*
  ──────
  ${menu.settings}
-╰───────────●●►
+╚═════════════════⫸
 
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
 
 await conn.sendMessage(from,{image: {url: `https://files.catbox.moe/vbi10j.png`},caption: desc},{quoted: mek});
 
@@ -1528,18 +1564,12 @@ cmd({
 },
 async(conn, mek, m,{from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply}) => {
 try{
-let status = ` *╭──────────●●►*
-> *♦️ᴍᴀɴɪꜱʜᴀ-ᴍᴅ ꜱʏꜱᴛᴇᴍ*
-
-*♦️ᴜᴘᴛɪᴍᴇ :* ${runtime(process.uptime())}
-
-*♦️ʀᴀᴍ ᴜꜱᴀɢᴇ :* ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB
-
-*♦️ʜᴏꜱᴛɴᴀᴍᴇ :* ${os.hostname()}
-
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*
-*╰──────────●●►*
-`
+let status = `╔══╣❍*ꜱʏꜱᴛᴇᴍ*❍╠═══⫸
+╠➢ *ᴜᴘᴛɪᴍᴇ :* ${runtime(process.uptime())}
+╠➢ *ʀᴀᴍ ᴜꜱᴀɢᴇ :* ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB
+╠➢ *ʜᴏꜱᴛɴᴀᴍᴇ :* ${os.hostname()}
+╚════════════════⫸
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
 await conn.sendMessage(from,{image:{url:config.ALIVE_IMG},caption:`${status}`},{quoted:mek})
 
 }catch(e){
@@ -1579,7 +1609,7 @@ cmd({
     }, async (conn, mek, m, { from, reply }) => {
       try {
       
-      let desc = `╭──────────●●►\n*🚀 ʀᴜɴᴛɪᴍᴇ :* ${runtime(process.uptime())}\n╰──────────●●►`
+      let desc = `╔══╣❍*ʀᴜɴᴛɪᴍᴇ*❍╠═══⫸\n╠➢ *🚀 ʀᴜɴᴛɪᴍᴇ :* ${runtime(process.uptime())}\n╚═════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
 
           // Sending the image with caption
           await conn.sendMessage(from,{image: {url: config.ALIVE_IMG},caption: desc},{quoted: mek});
@@ -1774,7 +1804,7 @@ async (conn, mek, m, { from, q, reply }) => {
         const url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
         const response = await axios.get(url);
         const data = response.data;
-        const weather = `╭──────────●●►
+        const weather = `╔══╣❍*ᴡᴇᴀᴛʜᴇʀ*❍╠═══⫸
 🌍 *ᴡᴇᴀᴛʜᴇʀ ɪɴꜰᴏʀᴍᴀᴛɪᴏɴ ꜰᴏʀ ${data.name}, ${data.sys.country}* 🌍
 🌡️ *ᴛᴇᴍᴘᴇʀᴀᴛᴜʀᴇ*: ${data.main.temp}°C
 🌡️ *ꜰᴇᴇʟꜱ ʟɪᴋᴇ*: ${data.main.feels_like}°C
@@ -1785,9 +1815,8 @@ async (conn, mek, m, { from, q, reply }) => {
 🌫️ *ꜱᴇꜱᴄʀɪᴘᴛɪᴏɴ*: ${data.weather[0].description}
 💨 *ᴡɪɴᴅ ꜱᴘᴇᴇᴅ*: ${data.wind.speed} m/s
 🔽 *ᴘʀᴇꜱꜱᴜʀᴇ*: ${data.main.pressure} hPa
-
-*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*
-╰──────────●●►`;
+╚═══════════════════⫸
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
         return reply(weather);
     } catch (e) {
         console.log(e);
@@ -1816,9 +1845,7 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
         const response = await axios.get(apiUrl);
         const data = response.data;
 
-        let userInfo = `╭──────────●●►
-> *♦️ᴍᴀɴɪꜱʜᴀ-ᴍᴅ ɢɪᴛꜱᴛᴀʟᴋ*
-        
+        let userInfo = `╔══╣❍*ɢɪᴛʜᴜʙꜱᴛᴀʀʟᴋ*❍╠═══⫸
 👤 *ᴜꜱᴇʀ ɴᴀᴍᴇ*: ${data.name || data.login}
 
 🔗 *ɢɪᴛʜᴜʙ ᴜʀʟ*:(${data.html_url})
@@ -1835,8 +1862,9 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
 
 🔭 *ᴘᴜʙʟɪᴄ ɢɪꜱᴛꜱ*: ${data.public_gists}
 
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*
-╰──────────●●►`;
+╚═══════════════════⫸
+
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
         await conn.sendMessage(from, { image: { url: data.avatar_url }, caption: userInfo }, { quoted: mek });
     } catch (e) {
@@ -1867,16 +1895,13 @@ async (conn, mek, m, { from, q, reply }) => {
         const response = await axios.get(url);
         const translation = response.data.responseData.translatedText;
 
-        const translationMessage = `
-> *⭕MANISHA-MD TRANSLATION ⭕*
+        const translationMessage = `╔══╣❍*ᴛʀᴀɴꜱʟᴀᴛᴇᴅ*❍╠═══⫸
+╠➢*ᴏʀɪɢɪɴᴀʟ*: ${textToTranslate}
+╠➢*ᴛʀᴀɴꜱʟᴀᴛᴇᴅ*: ${translation}
+╠➢*ʟᴀɴɢᴜᴀɢᴇ*: ${targetLang.toUpperCase()}
+╚════════════════════⫸
 
-*⭕ᴏʀɪɢɪɴᴀʟ*: ${textToTranslate}
-
-*⭕ᴛʀᴀɴꜱʟᴀᴛᴇᴅ*: ${translation}
-
-*⭕ʟᴀɴɢᴜᴀɢᴇ*: ${targetLang.toUpperCase()}
-
-> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`;
+> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
         return reply(translationMessage);
     } catch (e) {
@@ -2001,24 +2026,23 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
             return reply("🚫 Movie not found.");
         }
 
-        const movieInfo = `
-🎬 *Movie Information* 🎬
-
-🎥 *Title:* ${data.Title}
-📅 *Year:* ${data.Year}
-🌟 *Rated:* ${data.Rated}
-📆 *Released:* ${data.Released}
-⏳ *Runtime:* ${data.Runtime}
-🎭 *Genre:* ${data.Genre}
-🎬 *Director:* ${data.Director}
-✍️ *Writer:* ${data.Writer}
-🎭 *Actors:* ${data.Actors}
-📝 *Plot:* ${data.Plot}
-🌍 *Language:* ${data.Language}
-🇺🇸 *Country:* ${data.Country}
-🏆 *Awards:* ${data.Awards}
-⭐ *IMDB Rating:* ${data.imdbRating}
-🗳️ *IMDB Votes:* ${data.imdbVotes}
+        const movieInfo = `╔══╣❍*ᴍᴏᴠɪᴇ ɪɴꜰᴏ*❍╠═══⫸
+╠➢🎥 *Title:* ${data.Title}
+╠➢📅 *Year:* ${data.Year}
+╠➢🌟 *Rated:* ${data.Rated}
+╠➢📆 *Released:* ${data.Released}
+╠➢⏳ *Runtime:* ${data.Runtime}
+╠➢🎭 *Genre:* ${data.Genre}
+╠➢🎬 *Director:* ${data.Director}
+╠➢✍️ *Writer:* ${data.Writer}
+╠➢🎭 *Actors:* ${data.Actors}
+╠➢📝 *Plot:* ${data.Plot}
+╠➢🌍 *Language:* ${data.Language}
+╠➢🇺🇸 *Country:* ${data.Country}
+╠➢🏆 *Awards:* ${data.Awards}
+╠➢⭐ *IMDB Rating:* ${data.imdbRating}
+╠➢🗳️ *IMDB Votes:* ${data.imdbVotes}
+╚═══════════════════⫸
 `;
 
         // Define the image URL
@@ -2049,7 +2073,7 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
         const response = await axios.get(apiUrl);
         const data = response.data;
 
-        await conn.sendMessage(from, { image: { url: data.url }, caption: '*MANISHA-MD RANDOM ANIME GIRL IMAGES* ♥️\n\n\n> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*' }, { quoted: mek });
+        await conn.sendMessage(from, { image: { url: data.url }, caption: '*MANISHA-MD RANDOM ANIME GIRL IMAGES* ♥️\n\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_' }, { quoted: mek });
     } catch (e) {
         console.log(e);
         reply(`*Error Fetching Anime girl image*: ${e.message}`);
@@ -2070,7 +2094,7 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
         const response = await axios.get(apiUrl);
         const data = response.data;
 
-        await conn.sendMessage(from, { image: { url: data.message }, caption: 'MANISHA-MD DOWNLOAD DOG IMAGE\n\n\n> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*' }, { quoted: mek });
+        await conn.sendMessage(from, { image: { url: data.message }, caption: 'MANISHA-MD DOWNLOAD DOG IMAGE\n\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_' }, { quoted: mek });
     } catch (e) {
         console.log(e);
         reply(`Error Fetching Dog Image: ${e.message}`);
@@ -2092,7 +2116,7 @@ cmd({
       return reply("❌ Failed to fetch a joke. Please try again.");
     }
 
-    const jokeMessage = `🤣 *Here's a random joke for you!* 🤣\n\n*${joke.setup}*\n\n${joke.punchline} 😆\n\n> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`;
+    const jokeMessage = `🤣 *Here's a random joke for you!* 🤣\n\n*${joke.setup}*\n\n${joke.punchline} 😆\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
     return reply(jokeMessage);
   } catch (error) {
@@ -2116,7 +2140,7 @@ cmd({
       return reply("❌ Failed to fetch a fun fact. Please try again.");
     }
 
-    const factMessage = `🧠 *Random Fun Fact* 🧠\n\n${fact}\n\nIsn't that interesting? 😄\n\n> *ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*`;
+    const factMessage = `🧠 *Random Fun Fact* 🧠\n\n${fact}\n\nIsn't that interesting? 😄\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
     return reply(factMessage);
   } catch (error) {
@@ -2366,15 +2390,14 @@ cmd({
     const repository = packageData.repository ? packageData.repository.url : "Not available";
 
     // Create the response message
-    const message = `
-*MANISHA-MD NPM SEARCH*
-
-*🔰 NPM PACKAGE:* ${packageName}
-*📄 DESCRIPTION:* ${description}
-*⏸️ LAST VERSION:* ${latestVersion}
-*🪪 LICENSE:* ${license}
-*🪩 REPOSITORY:* ${repository}
-*🔗 NPM URL:* ${npmUrl}
+    const message = `╔══╣❍*ɴᴘᴍ ꜱᴇᴀʀᴄʜ*❍╠═══⫸
+╠➢*🔰 NPM PACKAGE:* ${packageName}
+╠➢*📄 DESCRIPTION:* ${description}
+╠➢*⏸️ LAST VERSION:* ${latestVersion}
+╠➢*🪪 LICENSE:* ${license}
+╠➢*🪩 REPOSITORY:* ${repository}
+╠➢*🔗 NPM URL:* ${npmUrl}
+╚═══════════════════⫸
 _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
     // Send the message
@@ -2548,6 +2571,181 @@ cmd({
     reply("✅ User has been demoted.")
 })
 
+// Command to list all pending group join requests
+cmd({
+    pattern: "requestlist",
+    desc: "Shows pending group join requests",
+    category: "group",
+    react: "📋",
+    filename: __filename
+},
+async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+    try {
+        await conn.sendMessage(from, {
+            react: { text: '⏳', key: m.key }
+        });
+
+        if (!isGroup) {
+            await conn.sendMessage(from, {
+                react: { text: '❌', key: m.key }
+            });
+            return reply("❌ This command can only be used in groups.");
+        }
+        if (!isAdmins) {
+            await conn.sendMessage(from, {
+                react: { text: '❌', key: m.key }
+            });
+            return reply("❌ Only group admins can use this command.");
+        }
+        if (!isBotAdmins) {
+            await conn.sendMessage(from, {
+                react: { text: '❌', key: m.key }
+            });
+            return reply("❌ I need to be an admin to view join requests.");
+        }
+
+        const requests = await conn.groupRequestParticipantsList(from);
+        
+        if (requests.length === 0) {
+            await conn.sendMessage(from, {
+                react: { text: 'ℹ️', key: m.key }
+            });
+            return reply("ℹ️ No pending join requests.");
+        }
+
+        let text = `📋 *Pending Join Requests (${requests.length})*\n\n`;
+        requests.forEach((user, i) => {
+            text += `${i+1}. @${user.jid.split('@')[0]}\n`;
+        });
+
+        await conn.sendMessage(from, {
+            react: { text: '✅', key: m.key }
+        });
+        return reply(text, { mentions: requests.map(u => u.jid) });
+    } catch (error) {
+        console.error("Request list error:", error);
+        await conn.sendMessage(from, {
+            react: { text: '❌', key: m.key }
+        });
+        return reply("❌ Failed to fetch join requests.");
+    }
+});
+
+// Command to accept all pending join requests
+cmd({
+    pattern: "acceptall",
+    desc: "Accepts all pending group join requests",
+    category: "group",
+    react: "✅",
+    filename: __filename
+},
+async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+    try {
+        await conn.sendMessage(from, {
+            react: { text: '⏳', key: m.key }
+        });
+
+        if (!isGroup) {
+            await conn.sendMessage(from, {
+                react: { text: '❌', key: m.key }
+            });
+            return reply("❌ This command can only be used in groups.");
+        }
+        if (!isAdmins) {
+            await conn.sendMessage(from, {
+                react: { text: '❌', key: m.key }
+            });
+            return reply("❌ Only group admins can use this command.");
+        }
+        if (!isBotAdmins) {
+            await conn.sendMessage(from, {
+                react: { text: '❌', key: m.key }
+            });
+            return reply("❌ I need to be an admin to accept join requests.");
+        }
+
+        const requests = await conn.groupRequestParticipantsList(from);
+        
+        if (requests.length === 0) {
+            await conn.sendMessage(from, {
+                react: { text: 'ℹ️', key: m.key }
+            });
+            return reply("ℹ️ No pending join requests to accept.");
+        }
+
+        const jids = requests.map(u => u.jid);
+        await conn.groupRequestParticipantsUpdate(from, jids, "approve");
+        
+        await conn.sendMessage(from, {
+            react: { text: '👍', key: m.key }
+        });
+        return reply(`✅ Successfully accepted ${requests.length} join requests.`);
+    } catch (error) {
+        console.error("Accept all error:", error);
+        await conn.sendMessage(from, {
+            react: { text: '❌', key: m.key }
+        });
+        return reply("❌ Failed to accept join requests.");
+    }
+});
+
+// Command to reject all pending join requests
+cmd({
+    pattern: "rejectall",
+    desc: "Rejects all pending group join requests",
+    category: "group",
+    react: "❌",
+    filename: __filename
+},
+async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+    try {
+        await conn.sendMessage(from, {
+            react: { text: '⏳', key: m.key }
+        });
+
+        if (!isGroup) {
+            await conn.sendMessage(from, {
+                react: { text: '❌', key: m.key }
+            });
+            return reply("❌ This command can only be used in groups.");
+        }
+        if (!isAdmins) {
+            await conn.sendMessage(from, {
+                react: { text: '❌', key: m.key }
+            });
+            return reply("❌ Only group admins can use this command.");
+        }
+        if (!isBotAdmins) {
+            await conn.sendMessage(from, {
+                react: { text: '❌', key: m.key }
+            });
+            return reply("❌ I need to be an admin to reject join requests.");
+        }
+
+        const requests = await conn.groupRequestParticipantsList(from);
+        
+        if (requests.length === 0) {
+            await conn.sendMessage(from, {
+                react: { text: 'ℹ️', key: m.key }
+            });
+            return reply("ℹ️ No pending join requests to reject.");
+        }
+
+        const jids = requests.map(u => u.jid);
+        await conn.groupRequestParticipantsUpdate(from, jids, "reject");
+        
+        await conn.sendMessage(from, {
+            react: { text: '👎', key: m.key }
+        });
+        return reply(`✅ Successfully rejected ${requests.length} join requests.`);
+    } catch (error) {
+        console.error("Reject all error:", error);
+        await conn.sendMessage(from, {
+            react: { text: '❌', key: m.key }
+        });
+        return reply("❌ Failed to reject join requests.");
+    }
+});
 
 
 cmd({
@@ -2615,13 +2813,13 @@ cmd({
       if (warningCount < 4) {
         // Send warning message
         await conn.sendMessage(from, {
-          text: `‎*⚠️LINKS ARE NOT ALLOWED⚠️*\n` +
-                `*╭────⬡ WARNING ⬡────*\n` +
-                `*├▢ USER :* @${sender.split('@')[0]}!\n` +
-                `*├▢ COUNT : ${warningCount}*\n` +
-                `*├▢ REASON : LINK SENDING*\n` +
-                `*├▢ WARN LIMIT : 3*\n` +
-                `*╰────────────────*`,
+          text: `‎*⚠️ʟɪɴᴋ ᴀʀᴇ ɴᴏᴛ ᴀʟʟᴏᴡᴇᴅ⚠️*\n` +
+                `*╔══╣❍*ᴡᴀʀɴɪɴɢ*❍╠═══⫸*\n` +
+                `*╠➢ USER :* @${sender.split('@')[0]}!\n` +
+                `*╠➢ COUNT : ${warningCount}*\n` +
+                `*╠➢ REASON : LINK SENDING*\n` +
+                `*╠➢ WARN LIMIT : 3*\n` +
+                `*╚════════════════⫸*`,
           mentions: [sender]
         });
       } else {
@@ -2699,6 +2897,87 @@ cmd({
   }
 });
 
+
+//========== AUTO STICKER AND REPLY ====================
+
+// 🔃 Initialize storage
+(async () => {
+  await storage.init({ dir: './.bot_autodata' });
+})();
+
+// Load existing data
+let autoReplies = {};
+let autoStickers = {};
+
+(async () => {
+  autoReplies = (await storage.getItem('autoReplies')) || {};
+  autoStickers = (await storage.getItem('autoStickers')) || {};
+})();
+
+// Save helpers
+async function saveReplies() {
+  await storage.setItem('autoReplies', autoReplies);
+}
+async function saveStickers() {
+  await storage.setItem('autoStickers', autoStickers);
+}
+
+// 🎯 Main handler
+cmd({ on: "body" }, async (conn, mek, m, { body, isOwner, quoted }) => {
+  if (config.AUTO_REPLY !== 'true') return;
+  const text = body.trim();
+  const pattern = /^(.+?)\s*[:|=>]\s*(.+)?$/; // hi : hello OR hi : [sticker]
+
+  // 📌 Add sticker (quoted)
+  if (pattern.test(text) && isOwner && quoted?.mtype === 'stickerMessage') {
+    const match = text.match(pattern);
+    const keyword = match[1].toLowerCase();
+    const stickerMsg = quoted.message?.stickerMessage || quoted.msg;
+    const fileSha256 = stickerMsg?.fileSha256 || quoted.fileSha256;
+
+    if (!fileSha256) return await m.reply("❌ Sticker data missing.");
+
+    const fileHash = Buffer.from(fileSha256).toString('base64');
+    autoStickers[keyword] = fileHash;
+    await saveStickers();
+
+    return await m.reply(`✅ *Sticker auto-reply* added for: *${keyword}*`);
+  }
+
+  // ✏️ Add text auto-reply
+  if (pattern.test(text) && isOwner) {
+    const match = text.match(pattern);
+    const keyword = match[1].toLowerCase();
+    const response = match[2];
+
+    if (!response || quoted?.mtype === 'stickerMessage') return; // already handled above
+
+    autoReplies[keyword] = response;
+    await saveReplies();
+
+    return await m.reply(`✅ *Text auto-reply* added for: *${keyword}*\n💬 ${response}`);
+  }
+
+  const key = text.toLowerCase();
+
+  // 📤 Send sticker if match
+  if (autoStickers[key]) {
+    try {
+      await conn.sendMessage(m.chat, {
+        sticker: { fileSha256: Buffer.from(autoStickers[key], 'base64') }
+      }, { quoted: m });
+      return;
+    } catch (e) {
+      console.error("Sticker send failed:", e);
+      await m.reply("⚠️ Couldn't send saved sticker.");
+    }
+  }
+
+  // 💬 Send text reply if match
+  if (autoReplies[key]) {
+    await m.reply(autoReplies[key]);
+  }
+});
 //============= module.exports simble===================
 };
 //========================================================
