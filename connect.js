@@ -732,7 +732,7 @@ async function getAnti() {
 //***************** ANTIDELET2 .JS ********************
 const DeletedText = async (conn, mek, jid, deleteInfo, isGroup, update) => {
     const messageContent = mek.message?.conversation || mek.message?.extendedTextMessage?.text || 'Unknown content';
-    deleteInfo += `╔══════════════⫸\n💬 *Content:* ${messageContent}\n╚═════════════════════⫸`;
+    deleteInfo += `\n╔══════════════⫸\n💬 *Content:* ${messageContent}\n╚═════════════════════⫸`;
 
     await conn.sendMessage(
         jid,
@@ -757,10 +757,10 @@ const DeletedMedia = async (conn, mek, jid, deleteInfo) => {
         };
     }
     if (messageType === 'imageMessage' || messageType === 'videoMessage') {
-        antideletedmek[messageType].caption = `🖼️ *Media Recovered!*\n\n${deleteInfo}`;
+        antideletedmek[messageType].caption = `╔═════⫸\n🖼️ *Media Recovered!*\n\n${deleteInfo}\n╚══════⫸`;
         await conn.relayMessage(jid, antideletedmek, {});
     } else if (messageType === 'audioMessage' || messageType === 'documentMessage') {
-        await conn.sendMessage(jid, { text: `📁 *File Recovered!*\n\n${deleteInfo}` }, { quoted: mek });
+        await conn.sendMessage(jid, { text: `╔═════⫸\n📁 *File Recovered!*\n\n${deleteInfo}\n╚══════⫸` }, { quoted: mek });
     }
 };
 
@@ -808,6 +808,23 @@ const AntiDelete = async (conn, updates) => {
     }
 };
 
+//***************** PREFIX **********
+let currentPrefix = config.PREFIX; // default prefix from config.js
+
+function getPrefix() {
+
+  return currentPrefix;
+
+}
+
+function setPrefix(newPrefix) {
+
+  currentPrefix = newPrefix;
+
+}
+
+//****************************
+
 //******************************
 //===================
-module.exports = {DATABASE, getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, sms, downloadMediaMessage, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage: saveMessageV2, UpdateDB, setCommitHash, getCommitHash, AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti,  DeletedText, DeletedMedia, AntiDelete,}
+module.exports = {DATABASE, getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, sms, downloadMediaMessage, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage: saveMessageV2, UpdateDB, setCommitHash, getCommitHash, AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti,  DeletedText, DeletedMedia, AntiDelete, getPrefix, setPrefix,}

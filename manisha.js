@@ -1,7 +1,7 @@
 module.exports = (conn) => {
 //╭────────────●●►
 const { downloadContentFromMessage, getContentType } = require("@whiskeysockets/baileys");
-const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, jsonformat, downloadMediaMessage, getAnti, setAnti} = require('./connect')
+const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, jsonformat, downloadMediaMessage, getAnti, setAnti, getPrefix, setPrefix} = require('./connect')
 const { cmd, commands } = require('./command')
 const config = require('./config');
 //╰────────────●●►
@@ -42,7 +42,11 @@ const API_KEY = config.MOVIE_API_KEY;
 const getBotOwner = (conn) => conn.user.id.split(":")[0];
 
 const settingsMap = {
-  "1": { key: "MODE", trueVal: "private", falseVal: "public", label: "Bot Mode" },
+  "1": {
+    key: "MODE",
+    label: "Bot Mode",
+    customOptions: ["private", "public", "inbox", "group"]
+  },
   "2": { key: "AUTO_REACT", trueVal: "true", falseVal: "false", label: "Auto-React" },
   "3": { key: "AUTO_READ_STATUS", trueVal: "true", falseVal: "false", label: "Auto-Read-Status" },
   "4": { key: "AUTO_STATUS_REPLY", trueVal: "true", falseVal: "false", label: "Auto-Status-Reply" },
@@ -51,7 +55,8 @@ const settingsMap = {
   "7": { key: "ANTI_LINK", trueVal: "true", falseVal: "false", label: "Anti-link" },
   "8": { key: "ANTI_LINK_KICK", trueVal: "true", falseVal: "false", label: "Anti-link-kick" },
   "9": { key: "ANTI_DEL_PATH", label: "Anti-delete Path", customOptions: ["log", "chat", "inbox"] },
-  "10": { key: "ANTIDELETE", trueVal: "true", falseVal: "false", label: "Anti-Delete" }
+  "10": { key: "ANTIDELETE", trueVal: "true", falseVal: "false", label: "Anti-Delete" },
+  "11": { key: "PREFIX", label: "Bot Prefix", isCustomInput: true }
 };
 
 cmd({
@@ -73,19 +78,20 @@ cmd({
     const sentMsg = await conn.sendMessage(from, {
       image: { url: config.ALIVE_IMG },
       caption:
-        `╔═══╣❍*ꜱᴇᴛᴛɪɴɢ*❍╠═══⫸\n` +
-        `╠➢ 1️⃣. ʙᴏᴛ ᴍᴏᴅᴇ (ᴘʀɪᴠᴀᴛᴇ / ᴘᴜʙʟɪᴄ)\n` +
-        `╠➢ 2️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴄᴛ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `╠➢ 3️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴅ-ꜱᴛᴀᴛᴜꜱ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `╠➢ 4️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʀᴇᴘʟʏ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `╠➢ 5️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʟɪᴋᴇ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `╠➢ 6️⃣. ʀᴇᴀᴅ-ᴍᴇꜱꜱᴀɢᴇ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `╠➢ 7️⃣. ᴀɴᴛɪ-ʟɪɴᴋ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `╠➢ 8️⃣. ᴀɴᴛɪ-ʟɪɴᴋ-ᴋɪᴄᴋ (ᴏɴ / ᴏꜰꜰ)\n` +
-        `╠➢ 9️⃣. ᴀɴᴛɪ-ᴅᴇʟᴇᴛ-ᴘᴀᴛʜ (ʟᴏɢ / ᴄʜᴀᴛ / ɪɴʙᴏx)\n` +
-        `╠➢ 🔟. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ (ᴏɴ / ᴏꜰꜰ)\n` +
+        `╔═══╣❍ꜱᴇᴛᴛɪɴɢ❍╠═══⫸\n` +
+        `╠➢ _*𝟏*_  . ʙᴏᴛ ᴍᴏᴅᴇ (ᴘʀɪᴠᴀᴛᴇ / ᴘᴜʙʟɪᴄ / ɪɴʙᴏx / ɢʀᴏᴜᴘ)\n` +
+        `╠➢ _*𝟐 *_. ᴀᴜᴛᴏ-ʀᴇᴀᴄᴛ\n` +
+        `╠➢ _*𝟑*_. ᴀᴜᴛᴏ-ʀᴇᴀᴅ-ꜱᴛᴀᴛᴜꜱ\n` +
+        `╠➢ _*𝟒*_. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʀᴇᴘʟʏ\n` +
+        `╠➢ _*𝟓*_. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʟɪᴋᴇ\n` +
+        `╠➢ _*𝟔 *_. ʀᴇᴀᴅ-ᴍᴇꜱꜱᴀɢᴇ\n` +
+        `╠➢ _*𝟕*_. ᴀɴᴛɪ-ʟɪɴᴋ\n` +
+        `╠➢ _*𝟖*_. ᴀɴᴛɪ-ʟɪɴᴋ-ᴋɪᴄᴋ\n` +
+        `╠➢ _*𝟗* _. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴘᴀᴛʜ\n` +
+        `╠➢ _*𝟏𝟎*_. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ\n` +
+        `╠➢ _* 𝟏𝟏*_. ᴄʜᴀɴɢᴇ ᴘʀᴇꜰɪx\n` +
         `╚════════════════════⫸\n\n` +
-        `> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
+        `> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ*_`
     });
 
     const menuMessageID = sentMsg.key.id;
@@ -108,7 +114,49 @@ cmd({
         const setting = settingsMap[settingOption];
 
         if (!setting) {
-          await conn.sendMessage(from, { text: "❌ Invalid option. Please reply with a number from 1 to 10." });
+          await conn.sendMessage(from, { text: "❌ Invalid option. Please reply with a number from 1 to 11." });
+          return;
+        }
+
+        if (setting.isCustomInput) {
+          const inputMsg = await conn.sendMessage(from, {
+            text: `🔧 *Enter new ${setting.label.toLowerCase()} now:*`
+          });
+
+          const inputMsgID = inputMsg.key.id;
+
+          const inputListener = async (inputData) => {
+            try {
+              const received3 = inputData.messages[0];
+              if (!received3 || received3.key.remoteJid !== from) return;
+
+              const message3 = received3.message;
+              if (!message3) return;
+
+              const sender3 = (received3.key.participant || received3.key.remoteJid).split("@")[0];
+              const isReplyToInput = message3.extendedTextMessage?.contextInfo?.stanzaId === inputMsgID;
+              const text3 = message3.conversation || message3.extendedTextMessage?.text;
+
+              if (!isReplyToInput || sender3 !== botOwner || !text3) return;
+
+              const newVal = text3.trim();
+
+              if (setting.key === "PREFIX") {
+                setPrefix(newVal);
+                config.PREFIX = newVal;
+                await conn.sendMessage(from, {
+                  text: `✅ *${setting.label} updated to:* \`${newVal}\``
+                });
+              }
+
+              conn.ev.off("messages.upsert", inputListener);
+            } catch (e) {
+              console.error("Custom Input Error:", e);
+            }
+          };
+
+          conn.ev.on("messages.upsert", inputListener);
+          conn.ev.off("messages.upsert", menuListener);
           return;
         }
 
@@ -268,7 +316,7 @@ cmd({
             return reply("Failed to fetch the video. Please try again later.");
         }
 
-        let ytmsg = `╔══╣❍*ᴠɪᴅᴇᴏ*❍╠═══⫸\n╠➢ *ᴛɪᴛʟᴇ:* ${yts.title}\n╠➢ *ᴅᴜʀᴀᴛɪᴏɴ:* ${yts.timestamp}\n╠➢ *ᴠɪᴡᴇꜱ:* ${yts.views}\n╠➢ *ᴀᴜᴛʜᴏʀ:* ${yts.author.name}\n╠➢ *ʟɪɴᴋ:* ${yts.url}\n╚═════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
+        let ytmsg = `╔══╣❍ᴠɪᴅᴇᴏ❍╠═══⫸\n╠➢ *ᴛɪᴛʟᴇ:* ${yts.title}\n╠➢ *ᴅᴜʀᴀᴛɪᴏɴ:* ${yts.timestamp}\n╠➢ *ᴠɪᴡᴇꜱ:* ${yts.views}\n╠➢ *ᴀᴜᴛʜᴏʀ:* ${yts.author.name}\n╠➢ *ʟɪɴᴋ:* ${yts.url}\n╚═════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
         // Send video directly with caption
         await conn.sendMessage(
@@ -316,7 +364,7 @@ async (conn, mek, m, { from, quoted, reply, q }) => {
         const xv_info = await fetchJson(`${apilink}/download/xvideo?url=${video_url}`);
         if (!xv_info?.result?.dl_link) return reply("❌ Failed to get download link.");
 
-        const msg = `╔══╣❍*xᴠɪᴅᴇᴏꜱ*❍╠═══⫸\n╠➢ *Title* : ${xv_info.result.title}\n╠➢ *Views* : ${xv_info.result.views}\n╠➢ *Likes* : ${xv_info.result.like}\n╠➢ *Dislikes* : ${xv_info.result.deslike}\n╚═════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
+        const msg = `╔══╣❍xᴠɪᴅᴇᴏꜱ❍╠═══⫸\n╠➢ *Title* : ${xv_info.result.title}\n╠➢ *Views* : ${xv_info.result.views}\n╠➢ *Likes* : ${xv_info.result.like}\n╠➢ *Dislikes* : ${xv_info.result.deslike}\n╚═════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
         // Send video info with thumbnail
         await conn.sendMessage(from, {
@@ -377,7 +425,7 @@ cmd({
         const image = media.find(m => m.type.toLowerCase().includes('image') || m.type.toLowerCase().includes('thumbnail'));
 
         const caption =
-`╔══╣❍*ᴘɪɴᴛᴇʀᴇꜱᴛᴅʟ*❍╠═══⫸\n` +
+`╔══╣❍ᴘɪɴᴛᴇʀᴇꜱᴛᴅʟ❍╠═══⫸\n` +
 `╠➢ *Title* - ${title}\n` +
 `╠➢ *Type* - ${video ? 'Video' : 'Image'}\n` +
 `╚══════════════════⫸\n\n` +
@@ -428,7 +476,7 @@ cmd({
 
     const { desc, thumb, video_sd, video_hd } = data.result;
 
-    const caption = `╔══╣❍*ᴛᴡɪᴛᴛᴇʀ*❍╠═══⫸\n╠➢ *ᴅᴇꜱᴄʀɪᴘᴛɪᴏɴ:* ${desc || "No description"}\n\n╠➢ *ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴏᴘᴛɪᴏɴꜱ*\n╠➢ 1. *SD Quality*\n╠➢ 2. *HD Quality*\n\n╠➢ *ᴀᴜᴅɪᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴏᴘᴛɪᴏɴꜱ*\n╠➢ 3. *Audio*\n╠➢ 4. *Document*\n╠➢ 4. *Voice*\n╠➢ *ʀᴇᴘʟʏ ᴡɪᴛʜ ᴛʜᴇ ɴᴜᴍʙᴇʀ*\n╚═══════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
+    const caption = `╔══╣❍ᴛᴡɪᴛᴛᴇʀ❍╠═══⫸\n╠➢ *ᴅᴇꜱᴄʀɪᴘᴛɪᴏɴ:* ${desc || "No description"}\n\n╠➢ *ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴏᴘᴛɪᴏɴꜱ*\n╠➢ 1. *SD Quality*\n╠➢ 2. *HD Quality*\n\n╠➢ *ᴀᴜᴅɪᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴏᴘᴛɪᴏɴꜱ*\n╠➢ 3. *Audio*\n╠➢ 4. *Document*\n╠➢ 4. *Voice*\n╠➢ *ʀᴇᴘʟʏ ᴡɪᴛʜ ᴛʜᴇ ɴᴜᴍʙᴇʀ*\n╚═══════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
     const sentMsg = await conn.sendMessage(from, {
       image: { url: thumb },
@@ -570,7 +618,7 @@ async (conn, mek, m, { from, args, q, reply }) => {
         const { title, like, comment, share, author, meta } = data.data;
         const videoUrl = meta.media.find(v => v.type === "video").org;
         
-        const caption = `╔══╣❍*ᴛɪᴋᴛᴏᴋ*❍╠═══⫸\n╠➢ *ᴜꜱᴀʀ:* ${author.nickname} (@${author.username})\n╠➢ *ᴛɪᴛʟᴇ:* ${title}\n╠➢ *ʟɪᴋᴇ:* ${like}\n╠➢ *ᴄᴏᴍᴍᴇɴᴛ:* ${comment}\n╠➢ *ꜱʜᴀʀᴇ:* ${share}\n╚════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
+        const caption = `╔══╣❍ᴛɪᴋᴛᴏᴋ❍╠═══⫸\n╠➢ *ᴜꜱᴀʀ:* ${author.nickname} (@${author.username})\n╠➢ *ᴛɪᴛʟᴇ:* ${title}\n╠➢ *ʟɪᴋᴇ:* ${like}\n╠➢ *ᴄᴏᴍᴍᴇɴᴛ:* ${comment}\n╠➢ *ꜱʜᴀʀᴇ:* ${share}\n╚════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
         
         await conn.sendMessage(from, {
             video: { url: videoUrl },
@@ -659,7 +707,7 @@ cmd({
       react: { text: "⬆️", key: m.key }
     });
 
-    const caption = `╔══╣❍*ᴍᴇᴅɪᴀꜰɪʀᴇ*❍╠═══⫸\n╠➢ *ꜰɪʟᴇ ɴᴀᴍᴇ:* ${file_name}\n╠➢ *ꜰɪʟᴇ ᴛʏᴘᴇ:* ${mime_type}\n╚════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
+    const caption = `╔══╣❍ᴍᴇᴅɪᴀꜰɪʀᴇ❍╠═══⫸\n╠➢ *ꜰɪʟᴇ ɴᴀᴍᴇ:* ${file_name}\n╠➢ *ꜰɪʟᴇ ᴛʏᴘᴇ:* ${mime_type}\n╚════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
     await conn.sendMessage(from, {
       document: { url: dl_link },
       mimetype: mime_type,
@@ -703,7 +751,7 @@ cmd({
     const app = data.datalist.list[0];
     const appSize = (app.size / 1048576).toFixed(2); // Convert bytes to MB
 
-    const caption = `╔══╣❍*ᴀᴘᴋ*❍╠═══⫸\n*ɴᴀᴍᴇ:* ${app.name}\n╠➢ *ꜱɪᴢᴇ:* ${appSize}ᴍʙ\n╠➢ *ᴘᴀᴄᴋᴀɢᴇ:* ${app.package}\n╠➢ *ᴜᴘᴅᴀᴛᴇᴅ:* ${app.updated}\n╠➢ *ᴅᴇᴠᴇᴘʟᴏᴘᴇʀ:* ${app.developer.name}\n╚═════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
+    const caption = `╔══╣❍ᴀᴘᴋ❍╠═══⫸\n*ɴᴀᴍᴇ:* ${app.name}\n╠➢ *ꜱɪᴢᴇ:* ${appSize}ᴍʙ\n╠➢ *ᴘᴀᴄᴋᴀɢᴇ:* ${app.package}\n╠➢ *ᴜᴘᴅᴀᴛᴇᴅ:* ${app.updated}\n╠➢ *ᴅᴇᴠᴇᴘʟᴏᴘᴇʀ:* ${app.developer.name}\n╚═════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
 
     await conn.sendMessage(from, { react: { text: "⬆️", key: m.key } });
 
@@ -1130,7 +1178,7 @@ cmd({
     try{
           
           // Status message to be sent
-          let desc = `╔══╣❍*ᴏᴡɴᴇʀ*❍╠═══⫸
+          let desc = `╔══╣❍ᴏᴡɴᴇʀ❍╠═══⫸
 ╠➢ *ᴏᴡɴᴇʀ :* *94721551183 ...*
 ╠➢ *ᴡʜᴀᴛꜱᴀᴘᴘ ᴄʜᴀɴɴᴇʟ :* *https://whatsapp.com/channel/0029VbAdMtMGk1G1R9Yg2L3x*
 ╚═════════════════⫸
@@ -1159,7 +1207,7 @@ cmd({
     try{
           
           // Status message to be sent
-          let desc = `╔══╣❍*ʀᴇᴘᴏ*❍╠═══⫸
+          let desc = `╔══╣❍ʀᴇᴘᴏ❍╠═══⫸
 ╠➢ *ʀᴇᴘᴏ:* *https://github.com/manisha-Official18/MANISHA-MD*
 ╠➢ *ᴏᴡɴᴇʀ :* *94721551183 ...*
 ╠➢ *ᴠᴇʀꜱɪᴏɴ :* *1.0 ...*
@@ -1190,7 +1238,7 @@ cmd({
     try{
           
           // Status message to be sent
-          let desc = `╔══╣❍*ᴀʟɪᴠᴇ*❍╠═══⫸
+          let desc = `╔══╣❍ᴀʟɪᴠᴇ❍╠═══⫸
 ╠➢ *ᴘᴏᴡᴇʀꜰᴜʟʟ ᴊᴀᴠᴀꜱᴄʀɪᴘᴛ ᴡʜᴀᴛꜱᴀᴘᴘ ʙᴏᴛ ...*
 ╠➢ *ᴏᴡɴᴇʀ : 94721551183 ...*
 ╠➢ *ᴠᴇʀꜱɪᴏɴ :* *1.0 ...*
@@ -1488,7 +1536,7 @@ menu[commands[i].category] += `.${commands[i].pattern}\n`;
 }
    
 
-let desc = `╔══╣❍*ᴀʟʟ ᴍᴇɴᴜ*❍╠═══⫸
+let desc = `╔══╣❍ᴀʟʟ ᴍᴇɴᴜ❍╠═══⫸
 ╠➢ *ʀᴜɴᴛɪᴍᴇ : ${runtime(process.uptime())}*
 ╠➢ *ʀᴀᴍ ᴜꜱᴀɢᴇ : ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB*
 ╠➢ *ᴘʟᴀᴛꜰᴏʀᴍ : ${os.hostname()}*
@@ -1561,7 +1609,7 @@ cmd({
 },
 async(conn, mek, m,{from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply}) => {
 try{
-let status = `╔══╣❍*ꜱʏꜱᴛᴇᴍ*❍╠═══⫸
+let status = `╔══╣❍ꜱʏꜱᴛᴇᴍ❍╠═══⫸
 ╠➢ *ᴜᴘᴛɪᴍᴇ :* ${runtime(process.uptime())}
 ╠➢ *ʀᴀᴍ ᴜꜱᴀɢᴇ :* ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB
 ╠➢ *ʜᴏꜱᴛɴᴀᴍᴇ :* ${os.hostname()}
@@ -1575,8 +1623,69 @@ reply(`${e}`)
 }
 })
 
+
 cmd({
     pattern: "ping",
+    alias: ["speed", "pong", "ping2", "ping3"],
+    use: '.ping',
+    desc: "Check bot's response time.",
+    category: "main",
+    react: "⚡",
+    filename: __filename
+}, async (conn, mek, m, { from, sender, reply }) => {
+    try {
+        const startTime = Date.now();
+
+        const emojis = ['🔥', '⚡', '🚀', '💨', '🎯', '🎉', '🌟', '💥', '🕐', '🔹', '💎', '🏆', '🎶', '🌠', '🌀', '🔱', '🛡️', '✨'];
+        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+
+        // React instantly with a random emoji
+        await conn.sendMessage(from, {
+            react: { text: randomEmoji, key: mek.key }
+        });
+
+        const ping = Date.now() - startTime;
+
+        let badge = '🐢 Slow', color = '🔴';
+        if (ping <= 150) {
+            badge = '🚀 Super Fast';
+            color = '🟢';
+        } else if (ping <= 300) {
+            badge = '⚡ Fast';
+            color = '🟡';
+        } else if (ping <= 600) {
+            badge = '⚠️ Medium';
+            color = '🟠';
+        }
+
+        // Load thumbnail buffer
+        const thumbnail = config.ALIVE_IMG
+            ? await (await require('node-fetch')(config.ALIVE_IMG)).buffer()
+            : null;
+
+await conn.sendMessage(from, { text: `*🚀MANISHA-MD SPEED : ${ping}ms*`}, { quoted: message })
+
+        await conn.sendMessage(from, {
+            text: `╔══╣❍*ᴍᴀɴɪꜱʜᴀ-ᴍᴅ*❍╠═══⫸\n╠➢ *ᴘɪɴɢ : ${ping} ms ${randomEmoji}*\n╠➢ *sᴛᴀᴛᴜs: ${color} ${badge}\n╚═══════════════════⫸`,
+            contextInfo: {
+                externalAdReply: {
+                    title: "⚡ ᴘɪɴɢ ʀᴇꜱᴜʟᴛ",
+                    body: ``,
+                    mediaType: 1,
+                    thumbnail: thumbnail,
+                    renderLargerThumbnail: true
+                }
+            }
+        }, { quoted: mek });
+
+    } catch (e) {
+        console.error("❌ Error in ping command:", e);
+        reply(`⚠️ Error: ${e.message}`);
+    }
+});
+
+cmd({
+    pattern: "ping2",
     desc: "Check bot's response time.",
     category: "main",
     react: "🚀",
@@ -1606,7 +1715,7 @@ cmd({
     }, async (conn, mek, m, { from, reply }) => {
       try {
       
-      let desc = `╔══╣❍*ʀᴜɴᴛɪᴍᴇ*❍╠═══⫸\n╠➢ *🚀 ʀᴜɴᴛɪᴍᴇ :* ${runtime(process.uptime())}\n╚═════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
+      let desc = `╔══╣❍ʀᴜɴᴛɪᴍᴇ❍╠═══⫸\n╠➢ *🚀 ʀᴜɴᴛɪᴍᴇ :* ${runtime(process.uptime())}\n╚═════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
 
           // Sending the image with caption
           await conn.sendMessage(from,{image: {url: config.ALIVE_IMG},caption: desc},{quoted: mek});
@@ -1801,7 +1910,7 @@ async (conn, mek, m, { from, q, reply }) => {
         const url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
         const response = await axios.get(url);
         const data = response.data;
-        const weather = `╔══╣❍*ᴡᴇᴀᴛʜᴇʀ*❍╠═══⫸
+        const weather = `╔══╣❍ᴡᴇᴀᴛʜᴇʀ❍╠═══⫸
 🌍 *ᴡᴇᴀᴛʜᴇʀ ɪɴꜰᴏʀᴍᴀᴛɪᴏɴ ꜰᴏʀ ${data.name}, ${data.sys.country}* 🌍
 🌡️ *ᴛᴇᴍᴘᴇʀᴀᴛᴜʀᴇ*: ${data.main.temp}°C
 🌡️ *ꜰᴇᴇʟꜱ ʟɪᴋᴇ*: ${data.main.feels_like}°C
@@ -1842,7 +1951,7 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
         const response = await axios.get(apiUrl);
         const data = response.data;
 
-        let userInfo = `╔══╣❍*ɢɪᴛʜᴜʙꜱᴛᴀʀʟᴋ*❍╠═══⫸
+        let userInfo = `╔══╣❍ɢɪᴛʜᴜʙꜱᴛᴀʀʟᴋ❍╠═══⫸
 👤 *ᴜꜱᴇʀ ɴᴀᴍᴇ*: ${data.name || data.login}
 
 🔗 *ɢɪᴛʜᴜʙ ᴜʀʟ*:(${data.html_url})
@@ -1892,7 +2001,7 @@ async (conn, mek, m, { from, q, reply }) => {
         const response = await axios.get(url);
         const translation = response.data.responseData.translatedText;
 
-        const translationMessage = `╔══╣❍*ᴛʀᴀɴꜱʟᴀᴛᴇᴅ*❍╠═══⫸
+        const translationMessage = `╔══╣❍ᴛʀᴀɴꜱʟᴀᴛᴇᴅ❍╠═══⫸
 ╠➢*ᴏʀɪɢɪɴᴀʟ*: ${textToTranslate}
 ╠➢*ᴛʀᴀɴꜱʟᴀᴛᴇᴅ*: ${translation}
 ╠➢*ʟᴀɴɢᴜᴀɢᴇ*: ${targetLang.toUpperCase()}
@@ -2023,7 +2132,7 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
             return reply("🚫 Movie not found.");
         }
 
-        const movieInfo = `╔══╣❍*ᴍᴏᴠɪᴇ ɪɴꜰᴏ*❍╠═══⫸
+        const movieInfo = `╔══╣❍ᴍᴏᴠɪᴇ ɪɴꜰᴏ❍╠═══⫸
 ╠➢🎥 *Title:* ${data.Title}
 ╠➢📅 *Year:* ${data.Year}
 ╠➢🌟 *Rated:* ${data.Rated}
@@ -2387,7 +2496,7 @@ cmd({
     const repository = packageData.repository ? packageData.repository.url : "Not available";
 
     // Create the response message
-    const message = `╔══╣❍*ɴᴘᴍ ꜱᴇᴀʀᴄʜ*❍╠═══⫸
+    const message = `╔══╣❍ɴᴘᴍ ꜱᴇᴀʀᴄʜ❍╠═══⫸
 ╠➢*🔰 NPM PACKAGE:* ${packageName}
 ╠➢*📄 DESCRIPTION:* ${description}
 ╠➢*⏸️ LAST VERSION:* ${latestVersion}
@@ -2811,7 +2920,7 @@ cmd({
         // Send warning message
         await conn.sendMessage(from, {
           text: `‎*⚠️ʟɪɴᴋ ᴀʀᴇ ɴᴏᴛ ᴀʟʟᴏᴡᴇᴅ⚠️*\n` +
-                `*╔══╣❍*ᴡᴀʀɴɪɴɢ*❍╠═══⫸*\n` +
+                `*╔══╣❍ᴡᴀʀɴɪɴɢ❍╠═══⫸*\n` +
                 `*╠➢ USER :* @${sender.split('@')[0]}!\n` +
                 `*╠➢ COUNT : ${warningCount}*\n` +
                 `*╠➢ REASON : LINK SENDING*\n` +
