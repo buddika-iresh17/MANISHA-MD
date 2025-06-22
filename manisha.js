@@ -42,159 +42,156 @@ const API_KEY = config.MOVIE_API_KEY;
 const getBotOwner = (conn) => conn.user.id.split(":")[0];
 
 const settingsMap = {
-  "1": {
-    key: "MODE",
-    label: "Bot Mode",
-    customOptions: ["private", "public", "inbox", "group"]
-  },
-  "2": { key: "AUTO_REACT", trueVal: "true", falseVal: "false", label: "Auto-React" },
-  "3": { key: "AUTO_READ_STATUS", trueVal: "true", falseVal: "false", label: "Auto-Read-Status" },
-  "4": { key: "AUTO_STATUS_REPLY", trueVal: "true", falseVal: "false", label: "Auto-Status-Reply" },
-  "5": { key: "AUTOLIKESTATUS", trueVal: "true", falseVal: "false", label: "Auto-like-status" },
-  "6": { key: "READ_MESSAGE", trueVal: "true", falseVal: "false", label: "Read-message" },
-  "7": { key: "ANTI_LINK", trueVal: "true", falseVal: "false", label: "Anti-link" },
-  "8": { key: "ANTI_LINK_KICK", trueVal: "true", falseVal: "false", label: "Anti-link-kick" },
-  "9": { key: "ANTI_DEL_PATH", label: "Anti-delete Path", customOptions: ["log", "chat", "inbox"] },
-  "10": { key: "ANTIDELETE", trueVal: "true", falseVal: "false", label: "Anti-Delete" }
+"1": { key: "MODE", trueVal: "private", falseVal: "public", label: "Bot Mode" },
+"2": { key: "AUTO_REACT", trueVal: "true", falseVal: "false", label: "Auto-React" },
+"3": { key: "AUTO_READ_STATUS", trueVal: "true", falseVal: "false", label: "Auto-Read-Status" },
+"4": { key: "AUTO_STATUS_REPLY", trueVal: "true", falseVal: "false", label: "Auto-Status-Reply" },
+"5": { key: "AUTOLIKESTATUS", trueVal: "true", falseVal: "false", label: "Auto-like-status" },
+"6": { key: "READ_MESSAGE", trueVal: "true", falseVal: "false", label: "Read-message" },
+"7": { key: "ANTI_LINK", trueVal: "true", falseVal: "false", label: "Anti-link" },
+"8": { key: "ANTI_LINK_KICK", trueVal: "true", falseVal: "false", label: "Anti-link-kick" },
+"9": { key: "ANTI_DEL_PATH", label: "Anti-delete Path", customOptions: ["log", "chat", "inbox"] },
+"10": { key: "ANTIDELETE", trueVal: "true", falseVal: "false", label: "Anti-Delete" }
 };
 
 cmd({
-  pattern: "settings",
-  alias: ["config"],
-  react: "⚙️",
-  desc: "Change bot settings via reply (owner only).",
-  category: "settings",
-  filename: __filename,
+pattern: "settings",
+alias: ["config"],
+react: "⚙️",
+desc: "Change bot settings via reply (owner only).",
+category: "settings",
+filename: __filename,
 }, async (conn, mek, m, { from }) => {
-  try {
-    const senderNumber = m.sender.split("@")[0];
-    const botOwner = getBotOwner(conn);
+try {
+const senderNumber = m.sender.split("@")[0];
+const botOwner = getBotOwner(conn);
 
-    if (senderNumber !== botOwner) {
-      return conn.sendMessage(from, { text: "*📛 Only the bot owner can use this command!*" });
-    }
+if (senderNumber !== botOwner) {  
+  return conn.sendMessage(from, { text: "*📛 Only the bot owner can use this command!*" });  
+}  
 
-    const sentMsg = await conn.sendMessage(from, {
-      image: { url: config.ALIVE_IMG },
-      caption:
-        `╔═══╣❍*ꜱᴇᴛᴛɪɴɢ*❍╠═══⫸\n` +
-        `╠➢ 1️⃣. ʙᴏᴛ ᴍᴏᴅᴇ (ᴘʀɪᴠᴀᴛᴇ / ᴘᴜʙʟɪᴄ / ɪɴʙᴏx / ɢʀᴏᴜᴘ)\n` +
-        `╠➢ 2️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴄᴛ\n` +
-        `╠➢ 3️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴅ-ꜱᴛᴀᴛᴜꜱ\n` +
-        `╠➢ 4️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʀᴇᴘʟʏ\n` +
-        `╠➢ 5️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʟɪᴋᴇ\n` +
-        `╠➢ 6️⃣. ʀᴇᴀᴅ-ᴍᴇꜱꜱᴀɢᴇ\n` +
-        `╠➢ 7️⃣. ᴀɴᴛɪ-ʟɪɴᴋ\n` +
-        `╠➢ 8️⃣. ᴀɴᴛɪ-ʟɪɴᴋ-ᴋɪᴄᴋ\n` +
-        `╠➢ 9️⃣. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴘᴀᴛʜ\n` +
-        `╠➢ 🔟. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ\n` +
-        `╚════════════════════⫸\n\n` +
-        `> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ*_`
-    });
+const sentMsg = await conn.sendMessage(from, {  
+  image: { url: config.ALIVE_IMG },  
+  caption:  
+    `╔═══╣❍*ꜱᴇᴛᴛɪɴɢ*❍╠═══⫸\n` +  
+    `╠➢ 1️⃣. ʙᴏᴛ ᴍᴏᴅᴇ (ᴘʀɪᴠᴀᴛᴇ / ᴘᴜʙʟɪᴄ)\n` +  
+    `╠➢ 2️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴄᴛ (ᴏɴ / ᴏꜰꜰ)\n` +  
+    `╠➢ 3️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴅ-ꜱᴛᴀᴛᴜꜱ (ᴏɴ / ᴏꜰꜰ)\n` +  
+    `╠➢ 4️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʀᴇᴘʟʏ (ᴏɴ / ᴏꜰꜰ)\n` +  
+    `╠➢ 5️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʟɪᴋᴇ (ᴏɴ / ᴏꜰꜰ)\n` +  
+    `╠➢ 6️⃣. ʀᴇᴀᴅ-ᴍᴇꜱꜱᴀɢᴇ (ᴏɴ / ᴏꜰꜰ)\n` +  
+    `╠➢ 7️⃣. ᴀɴᴛɪ-ʟɪɴᴋ (ᴏɴ / ᴏꜰꜰ)\n` +  
+    `╠➢ 8️⃣. ᴀɴᴛɪ-ʟɪɴᴋ-ᴋɪᴄᴋ (ᴏɴ / ᴏꜰꜰ)\n` +  
+    `╠➢ 9️⃣. ᴀɴᴛɪ-ᴅᴇʟᴇᴛ-ᴘᴀᴛʜ (ʟᴏɢ / ᴄʜᴀᴛ / ɪɴʙᴏx)\n` +  
+    `╠➢ 🔟. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ (ᴏɴ / ᴏꜰꜰ)\n` + 
+    `╠➢ 🔢. ʀᴇᴘʟʏ ᴡɪᴛʜ ɴᴜᴍʙᴇʀ\n` + 
+    `╚════════════════════⫸\n\n` +  
+    `> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`  
+});  
 
-    const menuMessageID = sentMsg.key.id;
+const menuMessageID = sentMsg.key.id;  
 
-    const menuListener = async (msgData) => {
-      try {
-        const received = msgData.messages[0];
-        if (!received || received.key.remoteJid !== from) return;
+const menuListener = async (msgData) => {  
+  try {  
+    const received = msgData.messages[0];  
+    if (!received || received.key.remoteJid !== from) return;  
 
-        const message = received.message;
-        if (!message) return;
+    const message = received.message;  
+    if (!message) return;  
 
-        const sender = (received.key.participant || received.key.remoteJid).split("@")[0];
-        const isReply = message.extendedTextMessage?.contextInfo?.stanzaId === menuMessageID;
-        const text = message.conversation || message.extendedTextMessage?.text;
+    const sender = (received.key.participant || received.key.remoteJid).split("@")[0];  
+    const isReply = message.extendedTextMessage?.contextInfo?.stanzaId === menuMessageID;  
+    const text = message.conversation || message.extendedTextMessage?.text;  
 
-        if (!isReply || sender !== botOwner || !text) return;
+    if (!isReply || sender !== botOwner || !text) return;  
 
-        const settingOption = text.trim();
-        const setting = settingsMap[settingOption];
+    const settingOption = text.trim();  
+    const setting = settingsMap[settingOption];  
 
-        if (!setting) {
-          await conn.sendMessage(from, { text: "❌ Invalid option. Please reply with a number from 1 to 10." });
-          return;
-        }
+    if (!setting) {  
+      await conn.sendMessage(from, { text: "❌ Invalid option. Please reply with a number from 1 to 10." });  
+      return;  
+    }  
 
-        const settingMsg = await conn.sendMessage(from, {
-          text: setting.customOptions
-            ? `╔═════⫸\n╠➢*${setting.label}:*\n╠➢${setting.customOptions.map((opt, i) => `${i + 1}. ${opt.toUpperCase()}`).join("\n")}\n╠➢ _Reply with number._\n╚═══════⫸`
-            : `╔═════⫸\n╠➢*${setting.label}:*\n\n╠➢1. ${setting.trueVal.toUpperCase()}\n╠➢2. ${setting.falseVal.toUpperCase()}\n╠➢ _Reply with number._\n╚════⫸`
-        });
+    const settingMsg = await conn.sendMessage(from, {  
+      text: setting.customOptions  
+        ? `╔═════⫸\n╠➢*${setting.label}:*\n╠➢${setting.customOptions.map((opt, i) => `${i + 1}. ${opt.toUpperCase()}`).join("\n")}\n╠➢ _Reply with number._\n╚═══════⫸`  
+        : `╔═════⫸\n╠➢*${setting.label}:*\n\n╠➢1. ${setting.trueVal.toUpperCase()}\n╠➢2. ${setting.falseVal.toUpperCase()}\n╠➢ _Reply with number._\n╚════⫸`  
+    });  
 
-        const toggleID = settingMsg.key.id;
+    const toggleID = settingMsg.key.id;  
 
-        const toggleListener = async (msgData2) => {
-          try {
-            const received2 = msgData2.messages[0];
-            if (!received2 || received2.key.remoteJid !== from) return;
+    const toggleListener = async (msgData2) => {  
+      try {  
+        const received2 = msgData2.messages[0];  
+        if (!received2 || received2.key.remoteJid !== from) return;  
 
-            const message2 = received2.message;
-            if (!message2) return;
+        const message2 = received2.message;  
+        if (!message2) return;  
 
-            const sender2 = (received2.key.participant || received2.key.remoteJid).split("@")[0];
-            const isReplyToToggle = message2.extendedTextMessage?.contextInfo?.stanzaId === toggleID;
-            const text2 = message2.conversation || message2.extendedTextMessage?.text;
+        const sender2 = (received2.key.participant || received2.key.remoteJid).split("@")[0];  
+        const isReplyToToggle = message2.extendedTextMessage?.contextInfo?.stanzaId === toggleID;  
+        const text2 = message2.conversation || message2.extendedTextMessage?.text;  
 
-            if (!isReplyToToggle || sender2 !== botOwner || !text2) return;
+        if (!isReplyToToggle || sender2 !== botOwner || !text2) return;  
 
-            const response = text2.trim();
+        const response = text2.trim();  
 
-            if (setting.customOptions) {
-              const index = parseInt(response) - 1;
-              if (index >= 0 && index < setting.customOptions.length) {
-                config[setting.key] = setting.customOptions[index];
-                await conn.sendMessage(from, {
-                  text: `✅ *${setting.label} set to ${setting.customOptions[index].toUpperCase()}.*`
-                });
-                conn.ev.off("messages.upsert", toggleListener);
-              } else {
-                await conn.sendMessage(from, { text: "❌ Invalid option. Please choose a valid number." });
-              }
-            } else {
-              if (setting.key === "ANTIDELETE") {
-                const enable = response === "1";
-                await setAnti(enable);
-                await conn.sendMessage(from, {
-                  text: `✅ *${setting.label} set to ${enable ? "ON" : "OFF"}.*`
-                });
-                conn.ev.off("messages.upsert", toggleListener);
-              } else {
-                if (response === "1") {
-                  config[setting.key] = setting.trueVal;
-                  await conn.sendMessage(from, {
-                    text: `✅ *${setting.label} set to ${setting.trueVal.toUpperCase()}.*`
-                  });
-                  conn.ev.off("messages.upsert", toggleListener);
-                } else if (response === "2") {
-                  config[setting.key] = setting.falseVal;
-                  await conn.sendMessage(from, {
-                    text: `✅ *${setting.label} set to ${setting.falseVal.toUpperCase()}.*`
-                  });
-                  conn.ev.off("messages.upsert", toggleListener);
-                } else {
-                  await conn.sendMessage(from, { text: "❌ Invalid option. Please reply with 1 or 2." });
-                }
-              }
-            }
-          } catch (err2) {
-            console.error("Toggle Error:", err2);
-          }
-        };
+        if (setting.customOptions) {  
+          const index = parseInt(response) - 1;  
+          if (index >= 0 && index < setting.customOptions.length) {  
+            config[setting.key] = setting.customOptions[index];  
+            await conn.sendMessage(from, {  
+              text: `✅ *${setting.label} set to ${setting.customOptions[index].toUpperCase()}.*`  
+            });  
+            conn.ev.off("messages.upsert", toggleListener);  
+          } else {  
+            await conn.sendMessage(from, { text: "❌ Invalid option. Please choose a valid number." });  
+          }  
+        } else {  
+          if (setting.key === "ANTIDELETE") {  
+            const enable = response === "1";  
+            await setAnti(enable);  
+            await conn.sendMessage(from, {  
+              text: `✅ *${setting.label} set to ${enable ? "ON" : "OFF"}.*`  
+            });  
+            conn.ev.off("messages.upsert", toggleListener);  
+          } else {  
+            if (response === "1") {  
+              config[setting.key] = setting.trueVal;  
+              await conn.sendMessage(from, {  
+                text: `✅ *${setting.label} set to ${setting.trueVal.toUpperCase()}.*`  
+              });  
+              conn.ev.off("messages.upsert", toggleListener);  
+            } else if (response === "2") {  
+              config[setting.key] = setting.falseVal;  
+              await conn.sendMessage(from, {  
+                text: `✅ *${setting.label} set to ${setting.falseVal.toUpperCase()}.*`  
+              });  
+              conn.ev.off("messages.upsert", toggleListener);  
+            } else {  
+              await conn.sendMessage(from, { text: "❌ Invalid option. Please reply with 1 or 2." });  
+            }  
+          }  
+        }  
+      } catch (err2) {  
+        console.error("Toggle Error:", err2);  
+      }  
+    };  
 
-        conn.ev.on("messages.upsert", toggleListener);
-        conn.ev.off("messages.upsert", menuListener);
+    conn.ev.on("messages.upsert", toggleListener);  
+    conn.ev.off("messages.upsert", menuListener);  
 
-      } catch (err) {
-        console.error("Settings Menu Error:", err);
-      }
-    };
+  } catch (err) {  
+    console.error("Settings Menu Error:", err);  
+  }  
+};  
 
-    conn.ev.on("messages.upsert", menuListener);
+conn.ev.on("messages.upsert", menuListener);
 
-  } catch (err) {
-    console.error("Settings Command Error:", err);
-  }
+} catch (err) {
+console.error("Settings Command Error:", err);
+}
 });
 //===================DOWNLOAD COMMAND======================
 // song download 
@@ -1579,7 +1576,6 @@ reply(`${e}`)
 }
 })
 
-
 cmd({
     pattern: "ping",
     alias: ["speed", "pong", "ping2", "ping3"],
@@ -1615,20 +1611,7 @@ cmd({
             color = '🟠';
         }
 
-        // Load thumbnail image from config.ALIVE_IMG if available
-        let thumbnail = null;
-        if (config.ALIVE_IMG) {
-            try {
-                const res = await fetch(config.ALIVE_IMG);
-                if (res.ok) {
-                    thumbnail = await res.buffer();
-                }
-            } catch (errThumb) {
-                console.error('Thumbnail fetch error:', errThumb);
-            }
-        }
-
-        // Final response with thumbnail preview
+        // Final response
         await conn.sendMessage(from, {
             text: `
             ╔══╣❍*ᴍᴀɴɪꜱʜᴀ-ᴍᴅ*❍╠═══⫸\n╠➢ *ᴘɪɴɢ: ${ping} ms ${randomEmoji}*\n╠➢ *sᴛᴀᴛᴜs: ${color} ${badge}*\n╠➢ *ᴠᴇʀsɪᴏɴ: ${config.version}*\n╚══════⫸`,
@@ -1637,7 +1620,7 @@ cmd({
                     title: "⚡ ᴘɪɴɢ ʀᴇꜱᴜʟᴛ",
                     body: ``,
                     mediaType: 1,
-                    thumbnail: thumbnail,
+                    thumbnail: config.ALIVE_IMG,
                     renderLargerThumbnail: true,
                     sourceUrl: '' // optional: put a link if you want
                 }
@@ -1646,9 +1629,10 @@ cmd({
 
     } catch (e) {
         console.error("❌ Error in ping command:", e);
-        reply(`⚠️ Error: ${e?.message || e}`);
+        reply(`⚠️ Error: ${e.message}`);
     }
 });
+
 
 cmd({
     pattern: "ping2",
