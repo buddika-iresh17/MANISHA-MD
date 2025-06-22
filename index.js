@@ -128,9 +128,109 @@ conn.ev.on('connection.update', async (update) => {
     console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Executing ✅...");
     console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 creatad by manisha coder 👨‍💻...");
 
-    let up = `╭────────────●●►\n\nMANISHA-MD bot connected successful ✅\n\nPREFIX: ${prefix}\n\nMODE: ${config.MODE}\n\nOWNER:94721551183\n\n╰────────────●●►`;
+    let up = `╔═══╣❍ᴍᴀɴɪꜱʜᴀ-ᴍᴅ❍╠═══⫸
+║ ✅ Bot Connected Successfully!
+╠════════════➢
+║ 🔖 Prefix : [${prefix}]
+║ 🔒 Mode   : [${config.MODE}]
+║ 👑 Owner  : [${owner}]
+╠═══════════════════➢
+║ 📜 Bot Description:  
+╠════════════➢
+║ MANISHA-MD is a powerful multi-
+║ functional WhatsApp bot featuring:
+║ - Auto replies & custom commands
+║ - Media downloading (audio/video)
+║ - Group management & moderation
+║ - Privacy modes & owner controls
+║ - And much more!
+╚═════════════════════⫸`;
+    let up1 = `⫷══╣❍ MANISHA-MD MENU LIST ❍╠══⫸
 
+╔═══ 📥 *Download Menu* ════⫸
+.song         - Download audio from YouTube
+.video        - Download video from YouTube
+.xvideos      - Download adult videos (18+)
+.pindl        - Download content from Pinterest
+.twitter      - Download video/image from Twitter
+.gdrive       - Download Google Drive files
+.tiktok       - Download TikTok video (no watermark)
+.ig           - Download from Instagram
+.mediafire    - Get Mediafire file
+.apk          - Download Android APK files
+.img          - Search image from text
+╚═════════════════════⫸
+
+╔═══ 👑 *Owner Menu* ════⫸
+.restart      - Restart the bot
+.vv           - View your JID
+.jid          - Show JID of message/group
+.block        - Block a user
+.unblock      - Unblock a user
+.blocklist    - Show blocked users
+.setpp        - Set bot profile picture
+╚═════════════════════⫸
+
+╔═══ 🤖 *AI Menu* ════⫸
+.gemini       - Chat with Google Gemini
+.ai           - Chat with built-in AI
+.openai       - Ask OpenAI (ChatGPT)
+.deepseek     - Access DeepSeek AI (code/genius)
+╚════════════════════════⫸
+
+╔═══ 🏠 *Main Menu* ════⫸
+.owner        - Contact bot owner
+.repo         - Show bot source code (GitHub)
+.alive        - Check if bot is alive
+.menu         - Show button menu
+.allmenu      - Show all commands
+.system       - Bot system information
+.ping         - Check bot response speed
+.runtime      - Show uptime
+╚════════════════════════⫸
+
+╔═══ 😄 *Fun Menu* ════⫸
+.animegirl    - Random anime girl image
+.dog          - Random cute dog image
+.joke         - Tell a joke
+.fact         - Give a random fact
+.hack         - Fake hacking generator
+.spam         - Fake spam generator
+.ringtone     - Download random ringtone
+╚════════════════════════⫸
+
+╔═══ 🔍 *Search Menu* ════⫸
+.yts          - Search YouTube videos
+.mvs          - Search movies or videos
+╚════════════════════════⫸
+
+╔═══ 🔄 *Convert Menu* ════⫸
+.sticker      - Convert image/video to sticker
+.img2url      - Upload image & get direct URL
+.npm          - Search NPM packages
+╚════════════════════════⫸
+
+╔═══ 📌 *Other Menu* ════⫸
+.vcc          - Fake call generator
+.weather      - Get current weather info
+.githubstalk  - Get GitHub user info
+.trt          - Translate text
+.tts          - Text to speech converter
+╚════════════════════════⫸
+
+╔═══ 🛠️ *Tool Menu* ════⫸
+.gitclone     - Clone a public GitHub repo
+╚════════════════════════⫸
+
+╔═══ 🎬 *Movie Menu* ════⫸
+.sinhalasub   - Get Sinhala subtitles
+╚════════════════════════⫸
+
+╔═══ ⚙️ *Settings Menu* ════⫸
+.settings     - Configure bot settings
+╚═════════════════════════⫸`;
     await conn.sendMessage(ownerNumber[0] + "@s.whatsapp.net", { image: { url: `https://files.catbox.moe/vbi10j.png` }, caption: up });
+    await conn.sendMessage(ownerNumber[0] + "@s.whatsapp.net", { image: { url: `https://files.catbox.moe/vbi10j.png` }, caption: up1 });
   }
 });
   conn.ev.on('creds.update', saveCreds);
