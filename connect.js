@@ -807,24 +807,6 @@ const AntiDelete = async (conn, updates) => {
         }
     }
 };
-
-//***************** PREFIX **********
-let currentPrefix = config.PREFIX; // default prefix from config.js
-
-function getPrefix() {
-
-  return currentPrefix;
-
-}
-
-function setPrefix(newPrefix) {
-
-  currentPrefix = newPrefix;
-
-}
-
-//****************************
-
 //******************************
 //===================
-module.exports = {DATABASE, getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, sms, downloadMediaMessage, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage: saveMessageV2, UpdateDB, setCommitHash, getCommitHash, AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti,  DeletedText, DeletedMedia, AntiDelete, getPrefix, setPrefix,}
+module.exports = {DATABASE, getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, sms, downloadMediaMessage, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage: saveMessageV2, UpdateDB, setCommitHash, getCommitHash, AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti,  DeletedText, DeletedMedia, AntiDelete,}

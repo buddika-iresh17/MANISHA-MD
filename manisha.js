@@ -1,7 +1,7 @@
 module.exports = (conn) => {
 //╭────────────●●►
 const { downloadContentFromMessage, getContentType } = require("@whiskeysockets/baileys");
-const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, jsonformat, downloadMediaMessage, getAnti, setAnti, getPrefix, setPrefix} = require('./connect')
+const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, jsonformat, downloadMediaMessage, getAnti, setAnti} = require('./connect')
 const { cmd, commands } = require('./command')
 const config = require('./config');
 //╰────────────●●►
@@ -55,8 +55,7 @@ const settingsMap = {
   "7": { key: "ANTI_LINK", trueVal: "true", falseVal: "false", label: "Anti-link" },
   "8": { key: "ANTI_LINK_KICK", trueVal: "true", falseVal: "false", label: "Anti-link-kick" },
   "9": { key: "ANTI_DEL_PATH", label: "Anti-delete Path", customOptions: ["log", "chat", "inbox"] },
-  "10": { key: "ANTIDELETE", trueVal: "true", falseVal: "false", label: "Anti-Delete" },
-  "11": { key: "PREFIX", label: "Bot Prefix", isCustomInput: true }
+  "10": { key: "ANTIDELETE", trueVal: "true", falseVal: "false", label: "Anti-Delete" }
 };
 
 cmd({
@@ -78,18 +77,17 @@ cmd({
     const sentMsg = await conn.sendMessage(from, {
       image: { url: config.ALIVE_IMG },
       caption:
-        `╔═══╣❍ꜱᴇᴛᴛɪɴɢ❍╠═══⫸\n` +
-        `╠➢ _*𝟏*_  . ʙᴏᴛ ᴍᴏᴅᴇ (ᴘʀɪᴠᴀᴛᴇ / ᴘᴜʙʟɪᴄ / ɪɴʙᴏx / ɢʀᴏᴜᴘ)\n` +
-        `╠➢ _*𝟐 *_. ᴀᴜᴛᴏ-ʀᴇᴀᴄᴛ\n` +
-        `╠➢ _*𝟑*_. ᴀᴜᴛᴏ-ʀᴇᴀᴅ-ꜱᴛᴀᴛᴜꜱ\n` +
-        `╠➢ _*𝟒*_. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʀᴇᴘʟʏ\n` +
-        `╠➢ _*𝟓*_. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʟɪᴋᴇ\n` +
-        `╠➢ _*𝟔 *_. ʀᴇᴀᴅ-ᴍᴇꜱꜱᴀɢᴇ\n` +
-        `╠➢ _*𝟕*_. ᴀɴᴛɪ-ʟɪɴᴋ\n` +
-        `╠➢ _*𝟖*_. ᴀɴᴛɪ-ʟɪɴᴋ-ᴋɪᴄᴋ\n` +
-        `╠➢ _*𝟗* _. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴘᴀᴛʜ\n` +
-        `╠➢ _*𝟏𝟎*_. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ\n` +
-        `╠➢ _* 𝟏𝟏*_. ᴄʜᴀɴɢᴇ ᴘʀᴇꜰɪx\n` +
+        `╔═══╣❍*ꜱᴇᴛᴛɪɴɢ*❍╠═══⫸\n` +
+        `╠➢ 1️⃣. ʙᴏᴛ ᴍᴏᴅᴇ (ᴘʀɪᴠᴀᴛᴇ / ᴘᴜʙʟɪᴄ / ɪɴʙᴏx / ɢʀᴏᴜᴘ)\n` +
+        `╠➢ 2️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴄᴛ\n` +
+        `╠➢ 3️⃣. ᴀᴜᴛᴏ-ʀᴇᴀᴅ-ꜱᴛᴀᴛᴜꜱ\n` +
+        `╠➢ 4️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʀᴇᴘʟʏ\n` +
+        `╠➢ 5️⃣. ᴀᴜᴛᴏ-ꜱᴛᴀᴛᴜꜱ-ʟɪᴋᴇ\n` +
+        `╠➢ 6️⃣. ʀᴇᴀᴅ-ᴍᴇꜱꜱᴀɢᴇ\n` +
+        `╠➢ 7️⃣. ᴀɴᴛɪ-ʟɪɴᴋ\n` +
+        `╠➢ 8️⃣. ᴀɴᴛɪ-ʟɪɴᴋ-ᴋɪᴄᴋ\n` +
+        `╠➢ 9️⃣. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴘᴀᴛʜ\n` +
+        `╠➢ 🔟. ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ\n` +
         `╚════════════════════⫸\n\n` +
         `> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ*_`
     });
@@ -114,49 +112,7 @@ cmd({
         const setting = settingsMap[settingOption];
 
         if (!setting) {
-          await conn.sendMessage(from, { text: "❌ Invalid option. Please reply with a number from 1 to 11." });
-          return;
-        }
-
-        if (setting.isCustomInput) {
-          const inputMsg = await conn.sendMessage(from, {
-            text: `🔧 *Enter new ${setting.label.toLowerCase()} now:*`
-          });
-
-          const inputMsgID = inputMsg.key.id;
-
-          const inputListener = async (inputData) => {
-            try {
-              const received3 = inputData.messages[0];
-              if (!received3 || received3.key.remoteJid !== from) return;
-
-              const message3 = received3.message;
-              if (!message3) return;
-
-              const sender3 = (received3.key.participant || received3.key.remoteJid).split("@")[0];
-              const isReplyToInput = message3.extendedTextMessage?.contextInfo?.stanzaId === inputMsgID;
-              const text3 = message3.conversation || message3.extendedTextMessage?.text;
-
-              if (!isReplyToInput || sender3 !== botOwner || !text3) return;
-
-              const newVal = text3.trim();
-
-              if (setting.key === "PREFIX") {
-                setPrefix(newVal);
-                config.PREFIX = newVal;
-                await conn.sendMessage(from, {
-                  text: `✅ *${setting.label} updated to:* \`${newVal}\``
-                });
-              }
-
-              conn.ev.off("messages.upsert", inputListener);
-            } catch (e) {
-              console.error("Custom Input Error:", e);
-            }
-          };
-
-          conn.ev.on("messages.upsert", inputListener);
-          conn.ev.off("messages.upsert", menuListener);
+          await conn.sendMessage(from, { text: "❌ Invalid option. Please reply with a number from 1 to 10." });
           return;
         }
 
@@ -1646,6 +1602,7 @@ cmd({
 
         const ping = Date.now() - startTime;
 
+        // Speed categorization
         let badge = '🐢 Slow', color = '🔴';
         if (ping <= 150) {
             badge = '🚀 Super Fast';
@@ -1658,29 +1615,38 @@ cmd({
             color = '🟠';
         }
 
-        // Load thumbnail buffer
-        const thumbnail = config.ALIVE_IMG
-            ? await (await require('node-fetch')(config.ALIVE_IMG)).buffer()
-            : null;
+        // Load thumbnail image from config.ALIVE_IMG if available
+        let thumbnail = null;
+        if (config.ALIVE_IMG) {
+            try {
+                const res = await fetch(config.ALIVE_IMG);
+                if (res.ok) {
+                    thumbnail = await res.buffer();
+                }
+            } catch (errThumb) {
+                console.error('Thumbnail fetch error:', errThumb);
+            }
+        }
 
-await conn.sendMessage(from, { text: `*🚀MANISHA-MD SPEED : ${ping}ms*`}, { quoted: message })
-
+        // Final response with thumbnail preview
         await conn.sendMessage(from, {
-            text: `╔══╣❍*ᴍᴀɴɪꜱʜᴀ-ᴍᴅ*❍╠═══⫸\n╠➢ *ᴘɪɴɢ : ${ping} ms ${randomEmoji}*\n╠➢ *sᴛᴀᴛᴜs: ${color} ${badge}\n╚═══════════════════⫸`,
+            text: `
+            ╔══╣❍*ᴍᴀɴɪꜱʜᴀ-ᴍᴅ*❍╠═══⫸\n╠➢ *ᴘɪɴɢ: ${ping} ms ${randomEmoji}*\n╠➢ *sᴛᴀᴛᴜs: ${color} ${badge}*\n╠➢ *ᴠᴇʀsɪᴏɴ: ${config.version}*\n╚══════⫸`,
             contextInfo: {
                 externalAdReply: {
                     title: "⚡ ᴘɪɴɢ ʀᴇꜱᴜʟᴛ",
                     body: ``,
                     mediaType: 1,
                     thumbnail: thumbnail,
-                    renderLargerThumbnail: true
+                    renderLargerThumbnail: true,
+                    sourceUrl: '' // optional: put a link if you want
                 }
             }
         }, { quoted: mek });
 
     } catch (e) {
         console.error("❌ Error in ping command:", e);
-        reply(`⚠️ Error: ${e.message}`);
+        reply(`⚠️ Error: ${e?.message || e}`);
     }
 });
 
