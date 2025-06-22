@@ -1580,8 +1580,8 @@ reply(`${e}`)
 cmd(
   {
     pattern: "ping",
-    alias: ["ping"],
-    desc: "Bot uptime, bot speed",
+    alias: ["alive"],
+    desc: "Bot uptime, status check",
     category: "main",
     filename: __filename,
   },
@@ -1593,7 +1593,7 @@ cmd(
 
       const speed = end - start;
 
-      // Choose custom reaction based on speed
+      // Speed-based reaction
       let reactionText = "⚡ Super Fast ⚡";
       if (speed >= 100 && speed < 500) {
         reactionText = "🚀 Fast";
@@ -1603,7 +1603,7 @@ cmd(
         reactionText = "🐌 Very Slow";
       }
 
-      // Send reaction to original message
+      // React to original message
       await conn.sendMessage(from, {
         react: {
           text: reactionText,
@@ -1617,30 +1617,20 @@ cmd(
 │   STATUS: ${reactionText}
 ╰─────────────◆\`\`\``;
 
-      if (config.ALIVE_IMG && isUrl(config.ALIVE_IMG)) {
-        await conn.sendMessage(from, {
-          image: { url: config.ALIVE_IMG },
-          caption,
-        }, { quoted: m });
-      } else {
-        await reply(caption);
-      }
+      // Default fallback image if config.ALIVE_IMG not set
+      const imageUrl = config.ALIVE_IMG || "https://files.catbox.moe/vbi10j.png";
+
+      await conn.sendMessage(from, {
+        image: { url: imageUrl },
+        caption,
+      }, { quoted: m });
+
     } catch (e) {
       console.error(e);
       reply("Error uploading image: " + (e.message || e));
     }
   }
 );
-
-// Helper function
-function isUrl(str) {
-  try {
-    new URL(str);
-    return true;
-  } catch (_) {
-    return false;
-  }
-}
 
 cmd({
       pattern: "runtime",
