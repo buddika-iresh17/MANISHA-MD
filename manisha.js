@@ -1577,45 +1577,70 @@ reply(`${e}`)
 })
 
 
-cmd({
+cmd(
+  {
     pattern: "ping",
-    desc: "Check bot's response time.",
+    alias: ["ping"],
+    desc: "Bot uptime, bot speed",
     category: "main",
-    react: "🚀",
-    filename: __filename
-},
-async (conn, mek, m, {
-    from, reply
-}) => {
+    filename: __filename,
+  },
+  async (conn, mek, m, { from, quoted, reply }) => {
     try {
-        const startTime = Date.now();
-        
-        // First message - optional
-        const message = await conn.sendMessage(from, { text: '*PINGING...*' });
+      const start = new Date().getTime();
+      const pingMsg = await reply("```Pinging...```");
+      const end = new Date().getTime();
 
-        const endTime = Date.now();
-        const ping = endTime - startTime;
+      const speed = end - start;
 
+      // Choose custom reaction based on speed
+      let reactionText = "⚡ Super Fast ⚡";
+      if (speed >= 100 && speed < 500) {
+        reactionText = "🚀 Fast";
+      } else if (speed >= 500 && speed < 1000) {
+        reactionText = "🐢 Slow";
+      } else if (speed >= 1000) {
+        reactionText = "🐌 Very Slow";
+      }
+
+      // Send reaction to original message
+      await conn.sendMessage(from, {
+        react: {
+          text: reactionText,
+          key: m.key,
+        },
+      });
+
+      const caption = `\`\`\`╭─────────────◆
+│   BOT IS ONLINE ✅
+│   SPEED: ${speed}ms
+│   STATUS: ${reactionText}
+╰─────────────◆\`\`\``;
+
+      if (config.ALIVE_IMG && isUrl(config.ALIVE_IMG)) {
         await conn.sendMessage(from, {
-            text: `*🚀 MANISHA-MD SPEED : ${ping}ms*`,
-            contextInfo: {
-                externalAdReply: {
-                    title: "💠 PING RESULT",
-                    body: `⚡ Speed: ${ping}ms`,
-                    thumbnailUrl: config.ALIVE_IMG,
-                    sourceUrl: '', // optional
-                    mediaType: 1,
-                    renderLargerThumbnail: true,
-                    showAdAttribution: false
-                }
-            }
-        }, { quoted: message });
-
+          image: { url: config.ALIVE_IMG },
+          caption,
+        }, { quoted: m });
+      } else {
+        await reply(caption);
+      }
     } catch (e) {
-        console.error(e);
-        reply(`${e}`);
+      console.error(e);
+      reply("Error uploading image: " + (e.message || e));
     }
-});
+  }
+);
+
+// Helper function
+function isUrl(str) {
+  try {
+    new URL(str);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
 
 cmd({
       pattern: "runtime",
