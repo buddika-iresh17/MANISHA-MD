@@ -10,9 +10,6 @@ const os = require("os")
 //╭────────────●●►
 const fs = require("fs");
 //╰────────────●●►
-//STIKER AND REPLY
-const storage = require('node-persist');
-//================
 const fse = require('fs-extra');
 const path = require('path');
 const fetch = require('node-fetch');
@@ -2897,87 +2894,6 @@ cmd({
   }
 });
 
-
-//========== AUTO STICKER AND REPLY ====================
-
-// 🔃 Initialize storage
-(async () => {
-  await storage.init({ dir: './.bot_autodata' });
-})();
-
-// Load existing data
-let autoReplies = {};
-let autoStickers = {};
-
-(async () => {
-  autoReplies = (await storage.getItem('autoReplies')) || {};
-  autoStickers = (await storage.getItem('autoStickers')) || {};
-})();
-
-// Save helpers
-async function saveReplies() {
-  await storage.setItem('autoReplies', autoReplies);
-}
-async function saveStickers() {
-  await storage.setItem('autoStickers', autoStickers);
-}
-
-// 🎯 Main handler
-cmd({ on: "body" }, async (conn, mek, m, { body, isOwner, quoted }) => {
-  if (config.AUTO_REPLY !== 'true') return;
-  const text = body.trim();
-  const pattern = /^(.+?)\s*[:|=>]\s*(.+)?$/; // hi : hello OR hi : [sticker]
-
-  // 📌 Add sticker (quoted)
-  if (pattern.test(text) && isOwner && quoted?.mtype === 'stickerMessage') {
-    const match = text.match(pattern);
-    const keyword = match[1].toLowerCase();
-    const stickerMsg = quoted.message?.stickerMessage || quoted.msg;
-    const fileSha256 = stickerMsg?.fileSha256 || quoted.fileSha256;
-
-    if (!fileSha256) return await m.reply("❌ Sticker data missing.");
-
-    const fileHash = Buffer.from(fileSha256).toString('base64');
-    autoStickers[keyword] = fileHash;
-    await saveStickers();
-
-    return await m.reply(`✅ *Sticker auto-reply* added for: *${keyword}*`);
-  }
-
-  // ✏️ Add text auto-reply
-  if (pattern.test(text) && isOwner) {
-    const match = text.match(pattern);
-    const keyword = match[1].toLowerCase();
-    const response = match[2];
-
-    if (!response || quoted?.mtype === 'stickerMessage') return; // already handled above
-
-    autoReplies[keyword] = response;
-    await saveReplies();
-
-    return await m.reply(`✅ *Text auto-reply* added for: *${keyword}*\n💬 ${response}`);
-  }
-
-  const key = text.toLowerCase();
-
-  // 📤 Send sticker if match
-  if (autoStickers[key]) {
-    try {
-      await conn.sendMessage(m.chat, {
-        sticker: { fileSha256: Buffer.from(autoStickers[key], 'base64') }
-      }, { quoted: m });
-      return;
-    } catch (e) {
-      console.error("Sticker send failed:", e);
-      await m.reply("⚠️ Couldn't send saved sticker.");
-    }
-  }
-
-  // 💬 Send text reply if match
-  if (autoReplies[key]) {
-    await m.reply(autoReplies[key]);
-  }
-});
 //============= module.exports simble===================
 };
 //========================================================
