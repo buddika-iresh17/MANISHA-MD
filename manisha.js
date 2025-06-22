@@ -1576,85 +1576,46 @@ reply(`${e}`)
 }
 })
 
+
 cmd({
     pattern: "ping",
-    alias: ["speed", "pong", "ping2", "ping3"],
-    use: '.ping',
-    desc: "Check bot's response time.",
-    category: "main",
-    react: "⚡",
-    filename: __filename
-}, async (conn, mek, m, { from, sender, reply }) => {
-    try {
-        const startTime = Date.now();
-
-        const emojis = ['🔥', '⚡', '🚀', '💨', '🎯', '🎉', '🌟', '💥', '🕐', '🔹', '💎', '🏆', '🎶', '🌠', '🌀', '🔱', '🛡️', '✨'];
-        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-
-        // React instantly with a random emoji
-        await conn.sendMessage(from, {
-            react: { text: randomEmoji, key: mek.key }
-        });
-
-        const ping = Date.now() - startTime;
-
-        // Speed categorization
-        let badge = '🐢 Slow', color = '🔴';
-        if (ping <= 150) {
-            badge = '🚀 Super Fast';
-            color = '🟢';
-        } else if (ping <= 300) {
-            badge = '⚡ Fast';
-            color = '🟡';
-        } else if (ping <= 600) {
-            badge = '⚠️ Medium';
-            color = '🟠';
-        }
-
-        // Final response
-        await conn.sendMessage(from, {
-            text: `
-            ╔══╣❍*ᴍᴀɴɪꜱʜᴀ-ᴍᴅ*❍╠═══⫸\n╠➢ *ᴘɪɴɢ: ${ping} ms ${randomEmoji}*\n╠➢ *sᴛᴀᴛᴜs: ${color} ${badge}*\n╠➢ *ᴠᴇʀsɪᴏɴ: ${config.version}*\n╚══════⫸`,
-            contextInfo: {
-                externalAdReply: {
-                    title: "⚡ ᴘɪɴɢ ʀᴇꜱᴜʟᴛ",
-                    body: ``,
-                    mediaType: 1,
-                    thumbnail: config.ALIVE_IMG,
-                    renderLargerThumbnail: true,
-                    sourceUrl: '' // optional: put a link if you want
-                }
-            }
-        }, { quoted: mek });
-
-    } catch (e) {
-        console.error("❌ Error in ping command:", e);
-        reply(`⚠️ Error: ${e.message}`);
-    }
-});
-
-
-cmd({
-    pattern: "ping2",
     desc: "Check bot's response time.",
     category: "main",
     react: "🚀",
     filename: __filename
 },
-async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+async (conn, mek, m, {
+    from, reply
+}) => {
     try {
-        const startTime = Date.now()
-        const message = await conn.sendMessage(from, { text: '*PINGING...*' })
-        const endTime = Date.now()
-        const ping = endTime - startTime
+        const startTime = Date.now();
         
-        await conn.sendMessage(from, { text: `*🚀MANISHA-MD SPEED : ${ping}ms*`}, { quoted: message })
+        // First message - optional
+        const message = await conn.sendMessage(from, { text: '*PINGING...*' });
+
+        const endTime = Date.now();
+        const ping = endTime - startTime;
+
+        await conn.sendMessage(from, {
+            text: `*🚀 MANISHA-MD SPEED : ${ping}ms*`,
+            contextInfo: {
+                externalAdReply: {
+                    title: "💠 PING RESULT",
+                    body: `⚡ Speed: ${ping}ms`,
+                    thumbnailUrl: config.ALIVE_IMG,
+                    sourceUrl: '', // optional
+                    mediaType: 1,
+                    renderLargerThumbnail: true,
+                    showAdAttribution: false
+                }
+            }
+        }, { quoted: message });
 
     } catch (e) {
-        console.log(e)
-        reply(`${e}`)
+        console.error(e);
+        reply(`${e}`);
     }
-})
+});
 
 cmd({
       pattern: "runtime",
