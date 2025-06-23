@@ -807,6 +807,37 @@ const AntiDelete = async (conn, updates) => {
         }
     }
 };
-//******************************
+//****************** VIEW_ONCE.JS ************
+
+const handleViewOnce = async (conn, message) => {
+    try {
+        if (!config.VIEW_ONCE) return; // 🔒 check if feature enabled
+
+        const voMsg = message.message?.viewOnceMessageV2?.message || message.message?.viewOnceMessage?.message;
+        const messageType = voMsg?.imageMessage ? 'imageMessage' : voMsg?.videoMessage ? 'videoMessage' : null;
+
+        if (!messageType) return;
+
+        const buffer = await downloadMediaMessage(
+            { message: { [messageType]: voMsg[messageType] } },
+            'buffer',
+            {}
+        );
+
+        const caption = `🕵️ *View Once ${messageType === 'imageMessage' ? 'Image' : 'Video'} Recovered!*`;
+
+        await conn.sendMessage(
+            config.VIEW_ONCE_PATH === 'inbox' ? conn.user.id : message.key.remoteJid,
+            {
+                [messageType === 'imageMessage' ? 'image' : 'video']: buffer,
+                caption,
+            },
+            { quoted: message }
+        );
+    } catch (err) {
+        console.error('ViewOnce Recovery Error:', err);
+    }
+};
+
 //===================
-module.exports = {DATABASE, getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, sms, downloadMediaMessage, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage: saveMessageV2, UpdateDB, setCommitHash, getCommitHash, AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti,  DeletedText, DeletedMedia, AntiDelete,}
+module.exports = {DATABASE, getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, sms, downloadMediaMessage, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage: saveMessageV2, UpdateDB, setCommitHash, getCommitHash, AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti,  DeletedText, DeletedMedia, AntiDelete,handleViewOnce,}
