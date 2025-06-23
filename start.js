@@ -21,7 +21,7 @@ const {
     Browsers
   } = require('@whiskeysockets/baileys')
   const l = console.log
-  const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti, getAllAntiDeleteSettings, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage, sms, downloadMediaMessage, AntiDelete, handleViewOnce } = require('./connect')
+  const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, AntiDelDB, initializeAntiDeleteSettings, setAnti, getAnti, getAllAntiDeleteSettings, saveContact, loadMessage, getName, getChatSummary, saveGroupMetadata, getGroupMetadata, saveMessageCount, getInactiveGroupMembers, getGroupMembersMessageCount, saveMessage, sms, downloadMediaMessage, AntiDelete } = require('./connect')
   const fs = require('fs')
   const ff = require('fluent-ffmpeg')
   const P = require('pino')
@@ -171,19 +171,7 @@ conn.ev.on('connection.update', async (update) => {
     mek.message = (getContentType(mek.message) === 'ephemeralMessage') 
     ? mek.message.ephemeralMessage.message 
     : mek.message;
-    //console.log("New Message Detected:", JSON.stringify(mek, null, 2));
     
-    //=======
-    // 🕵️ View Once Recovery system
-    if (config.VIEW_ONCE && (mek.message?.viewOnceMessageV2 || mek.message?.viewOnceMessage)) {
-        try {
-            await handleViewOnce(conn, mek);
-        } catch (e) {
-            console.error("View Once Recovery Error:", e);
-        }
-    }
-
-    //======
   if (config.READ_MESSAGE === 'true') {
     await conn.readMessages([mek.key]);  // Mark message as read
     console.log(`Marked message from ${mek.key.remoteJid} as read.`);

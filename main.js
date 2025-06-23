@@ -196,40 +196,6 @@ conn.ev.on("messages.upsert", menuListener);
 console.error("Settings Command Error:", err);
 }
 });
-
-//👥👥👥👥
-cmd(
-  {
-    pattern: "viewonce",
-    alias: ["vo"],
-    desc: "Enable or disable View Once recovery system (in-memory)",
-    category: "settings",
-    filename: __filename,
-    owner: true,
-  },
-  async (conn, mek, m, { args, reply }) => {
-    try {
-      const input = args[0]?.toLowerCase();
-      if (!['on', 'off'].includes(input)) {
-        return reply(
-          `🛠️ *View Once Recovery Status*\n\n📌 Usage: .viewonce on / off\n🔄 Current Status: ${config.VIEW_ONCE ? 'ENABLED ✅' : 'DISABLED ❌'}`
-        );
-      }
-
-      // Update config object in-memory
-      config.VIEW_ONCE = input === 'on';
-
-      reply(`🔁 View Once Recovery has been *${config.VIEW_ONCE ? 'ENABLED ✅' : 'DISABLED ❌'}*`);
-
-      // Optional: Save to DB or file here if you want persistence
-
-    } catch (e) {
-      console.error(e);
-      reply("⚠️ An error occurred: " + (e.message || e));
-    }
-  }
-);
-//👥👥👥👥👥
 //===================DOWNLOAD COMMAND======================
 // song download 
 cmd({ 
@@ -280,12 +246,11 @@ cmd({
 });
 
 //video download
-
 cmd({
     pattern: "video",
     alias: ["ytvideo", "mp4"],
     react: "📽",
-    desc: "Download YouTube video (MP4)",
+    desc: "Download YouTube video or audio (as document)",
     category: "download",
     use: ".video <query>",
     filename: __filename
@@ -293,20 +258,18 @@ cmd({
     try {
         if (!q) return reply("❓ What video do you want to download? Please provide a search term.");
 
-        await reply("🔍 *Searching for your video, please wait...*");
+        await reply("🔍 *Searching for your video...*");
 
         const search = await ytsearch(q);
-        if (!search.results.length) return reply("❌ No results found for your query.");
+        if (!search.results.length) return reply("❌ No results found.");
 
         const { title, thumbnail, timestamp, url } = search.results[0];
         const videoUrl = encodeURIComponent(url);
 
-        // Try primary API
         const api1 = `https://apis-keith.vercel.app/download/dlmp4?url=${videoUrl}`;
         const api2 = `https://apis.davidcyriltech.my.id/download/ytmp4?url=${videoUrl}`;
 
         let data;
-
         try {
             const res1 = await fetch(api1);
             data = await res1.json();
@@ -319,21 +282,72 @@ cmd({
 
         const downloadUrl = data.result.downloadUrl || data.result.download_url;
 
-        await conn.sendMessage(from, {
+        const sentMsg = await conn.sendMessage(from, {
             image: { url: thumbnail },
-            caption: `🎬 *Video Found:*\n\n📌 *Title:* ${title}\n⏱️ *Duration:* ${timestamp}\n🔗 *Link:* ${url}\n\n> Powered by Malvin`
+            caption: `╔══╣❍ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ❍╠═══⫸\n╠➢📌 *ᴛɪᴛʟᴇ:* ${title}\n╠➢⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${timestamp}\n╠➢ 1️⃣. ᴠɪᴅᴇᴏ\n╠➢ 2️⃣. ᴅᴏᴄᴜᴍᴇɴᴛ\n╠➢ 🔢. ʀᴇᴘʟʏ ᴡɪᴛʜ ɴᴜᴍʙᴇʀ\n╚════════════════════⫸\n\n
+            > _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
         }, { quoted: mek });
 
-        await conn.sendMessage(from, {
-            video: { url: downloadUrl },
-            mimetype: "video/mp4",
-            caption: `🎬 *Video Downloaded Successfully!*\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*-`
-        }, { quoted: mek });
+        const messageID = sentMsg.key.id;
+        global._videoSimple = global._videoSimple || {};
+        global._videoSimple[messageID] = downloadUrl;
 
     } catch (error) {
-        reply(`❌ An error occurred: ${error.message}`);
+        reply(`❌ Error: ${error.message}`);
     }
 });
+
+// Reply handler for options
+conn.ev.on("messages.upsert", async (msgData) => {
+    try {
+        const receivedMsg = msgData.messages[0];
+        if (!receivedMsg.message || receivedMsg.key.fromMe) return;
+
+        const receivedText = receivedMsg.message.conversation || receivedMsg.message.extendedTextMessage?.text;
+        const senderID = receivedMsg.key.remoteJid;
+        const contextInfo = receivedMsg.message?.extendedTextMessage?.contextInfo;
+
+        if (!contextInfo?.stanzaId) return;
+
+        const messageID = contextInfo.stanzaId;
+        const videoUrl = global._videoSimple?.[messageID];
+        if (!videoUrl) return;
+
+        await conn.sendMessage(senderID, {
+            react: { text: '⬇️', key: receivedMsg.key }
+        });
+
+        switch (receivedText.trim()) {
+            case "1":
+                await conn.sendMessage(senderID, {
+                    video: { url: videoUrl },
+                    caption: "📽️ *video download*"
+                }, { quoted: receivedMsg });
+                break;
+
+            case "2":
+                await conn.sendMessage(senderID, {
+                    document: { url: videoUrl },
+                    mimetype: "audio/mpeg",
+                    fileName: "YouTube_Audio.mp3",
+                    caption: "📄 *Document download*"
+                }, { quoted: receivedMsg });
+                break;
+
+            default:
+                await conn.sendMessage(senderID, {
+                    text: "❌ Invalid option! Reply with 1 or 2.",
+                    quoted: receivedMsg
+                });
+        }
+
+        delete global._videoSimple[messageID];
+
+    } catch (err) {
+        console.error("Reply handler error:", err.message);
+    }
+});
+
 //mp4 download
 
 cmd({ 
@@ -380,82 +394,6 @@ cmd({
     }
 });
 
-
-cmd({
-    pattern: "play",
-    alias: ["ytplay", "ytmp3"],
-    react: "📲",
-    desc: "Download YouTube song or video",
-    category: "download",
-    use: '.play <song name or YouTube URL>',
-    filename: __filename
-}, async (conn, mek, m, { from, reply, q }) => {
-    try {
-        if (!q && !m.quoted) return reply("❓ What song or URL do you want to download? You can also reply to a message with a URL.");
-        
-        let input = q || (m.quoted && m.quoted.text);
-        if (!input) return reply("❌ No valid input provided!");
-
-        let isAudio = !input.toLowerCase().includes("video");
-
-        await reply("🔍 Searching, please wait...");
-
-        const search = await ytsearch(input);
-        if (!search.results.length) return reply("❌ No results found!");
-
-        const vid = search.results[0];
-        const title = vid.title.replace(/[^a-zA-Z0-9 ]/g, "");
-        const duration = vid.timestamp;
-        const videoUrl = vid.url;
-        const thumbnail = vid.thumbnail;
-        const outputPath = path.join(__dirname, `${title}.mp3`);
-
-        const apis = [
-            `https://xploader-api.vercel.app/ytmp3?url=${videoUrl}`,
-            `https://apis.davidcyriltech.my.id/youtube/mp3?url=${videoUrl}`,
-            `https://api.ryzendesu.vip/api/downloader/ytmp3?url=${videoUrl}`,
-            `https://api.dreaded.site/api/ytdl/audio?url=${videoUrl}`
-        ];
-
-        if (isAudio) {
-            for (const api of apis) {
-                try {
-                    const res = await axios.get(api);
-                    const data = res.data;
-                    if (!(data.status === 200 || data.success)) continue;
-
-                    const audioUrl = data.result?.downloadUrl || data.url;
-                    if (!audioUrl) continue;
-
-                    const stream = await axios({ url: audioUrl, method: "GET", responseType: "stream" });
-                    if (stream.status !== 200) continue;
-
-                    return ffmpeg(stream.data)
-                        .toFormat('mp3')
-                        .save(outputPath)
-                        .on('end', async () => {
-                            await conn.sendMessage(from, {
-                                document: { url: outputPath },
-                                mimetype: 'audio/mp3',
-                                fileName: `${title}.mp3`,
-                                caption: `🎶 *Title:* ${vid.title}\n⏱️ *Duration:* ${duration}\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`,
-                                thumbnail: { url: thumbnail }
-                            }, { quoted: mek });
-                            fs.unlinkSync(outputPath);
-                        })
-                        .on('error', err => reply("❌ Conversion failed\n" + err.message));
-                } catch (err) {
-                    continue;
-                }
-            }
-            return reply("❌ All APIs failed or are down.");
-        }
-
-    } catch (e) {
-        console.error(e);
-        reply("❌ Something went wrong\n" + e.message);
-    }
-});
 
 
 const apilink = 'https://www.dark-yasiya-api.site'; // DO NOT CHANGE
@@ -1582,8 +1520,7 @@ cmd({
 ┃★│ • xvideos [name]
 ┃★│ • song [name]
 ┃★│ • video [name]
-┃★│ • mp4 [ɴᴀᴍᴇ]
-┃★│ • play [name]
+┃★│ • mp4 [name]
 ┃★│ • apk [name]
 ┃★│ • ig [url]
 ┃★│ • pindl [url]
