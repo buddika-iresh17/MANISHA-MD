@@ -250,7 +250,7 @@ cmd({
     pattern: "video",
     alias: ["ytvideo", "mp4"],
     react: "📽",
-    desc: "Download YouTube video or audio (as document)",
+    desc: "Download YouTube video (MP4)",
     category: "download",
     use: ".video <query>",
     filename: __filename
@@ -258,18 +258,20 @@ cmd({
     try {
         if (!q) return reply("❓ What video do you want to download? Please provide a search term.");
 
-        await reply("🔍 *Searching for your video...*");
+        await reply("🔍 *Searching for your video, please wait...*");
 
         const search = await ytsearch(q);
-        if (!search.results.length) return reply("❌ No results found.");
+        if (!search.results.length) return reply("❌ No results found for your query.");
 
         const { title, thumbnail, timestamp, url } = search.results[0];
         const videoUrl = encodeURIComponent(url);
 
+        // Try primary API
         const api1 = `https://apis-keith.vercel.app/download/dlmp4?url=${videoUrl}`;
         const api2 = `https://apis.davidcyriltech.my.id/download/ytmp4?url=${videoUrl}`;
 
         let data;
+
         try {
             const res1 = await fetch(api1);
             data = await res1.json();
@@ -282,72 +284,44 @@ cmd({
 
         const downloadUrl = data.result.downloadUrl || data.result.download_url;
 
-        const sentMsg = await conn.sendMessage(from, {
+        await conn.sendMessage(from, {
             image: { url: thumbnail },
-            caption: `╔══╣❍ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ❍╠═══⫸\n╠➢📌 *ᴛɪᴛʟᴇ:* ${title}\n╠➢⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${timestamp}\n╠➢ 1️⃣. ᴠɪᴅᴇᴏ\n╠➢ 2️⃣. ᴅᴏᴄᴜᴍᴇɴᴛ\n╠➢ 🔢. ʀᴇᴘʟʏ ᴡɪᴛʜ ɴᴜᴍʙᴇʀ\n╚════════════════════⫸\n\n
-            > _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
+            caption: `╔══╣❍ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ❍╠═══⫸\n╠➢📌 *ᴛɪᴛʟᴇ:* ${title}\n╠➢⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${timestamp}\n╠➢ 1️⃣. ᴠɪᴅᴇᴏ\n╠➢ 2️⃣. ᴅᴏᴄᴜᴍᴇɴᴛ\n╠➢ 🔢. ʀᴇᴘʟʏ ᴡɪᴛʜ ɴᴜᴍʙᴇʀ\n╚════════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
         }, { quoted: mek });
+        
+        conn.ev.on('messages.upsert', async (msgUpdate) => {
+            const msg = msgUpdate.messages[0];
+            if (!msg.message || !msg.message.extendedTextMessage) return;
 
-        const messageID = sentMsg.key.id;
-        global._videoSimple = global._videoSimple || {};
-        global._videoSimple[messageID] = downloadUrl;
+            const userReply = msg.message.extendedTextMessage.text.trim();
 
-    } catch (error) {
-        reply(`❌ Error: ${error.message}`);
-    }
-});
-
-// Reply handler for options
-conn.ev.on("messages.upsert", async (msgData) => {
-    try {
-        const receivedMsg = msgData.messages[0];
-        if (!receivedMsg.message || receivedMsg.key.fromMe) return;
-
-        const receivedText = receivedMsg.message.conversation || receivedMsg.message.extendedTextMessage?.text;
-        const senderID = receivedMsg.key.remoteJid;
-        const contextInfo = receivedMsg.message?.extendedTextMessage?.contextInfo;
-
-        if (!contextInfo?.stanzaId) return;
-
-        const messageID = contextInfo.stanzaId;
-        const videoUrl = global._videoSimple?.[messageID];
-        if (!videoUrl) return;
-
-        await conn.sendMessage(senderID, {
-            react: { text: '⬇️', key: receivedMsg.key }
+            // Ensure the user reply references the correct message
+            if (msg.message.extendedTextMessage.contextInfo && msg.message.extendedTextMessage.contextInfo.stanzaId === menuMsg.key.id) {
+                if (userReply === '1') {
+                    // Send video
+                    await conn.sendMessage(from, {
+            video: { url: downloadUrl },
+            mimetype: "video/mp4",
+            caption: `🎬 *Video Downloaded Successfully!*`
+        }, { quoted: mek });
+                } else if (userReply === '2') {
+                    // Send document
+                    await conn.sendMessage(from, {
+            video: { url: downloadUrl },
+            mimetype: "video/mp4",
+            caption: `🎬 *Video Downloaded Successfully!*\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
+        }, { quoted: mek });
+                } else {
+                    reply("❎ Invalid option. Please reply with `1` for video or `2` for download.");
+                }
+            }
         });
 
-        switch (receivedText.trim()) {
-            case "1":
-                await conn.sendMessage(senderID, {
-                    video: { url: videoUrl },
-                    caption: "📽️ *video download*"
-                }, { quoted: receivedMsg });
-                break;
-
-            case "2":
-                await conn.sendMessage(senderID, {
-                    document: { url: videoUrl },
-                    mimetype: "audio/mpeg",
-                    fileName: "YouTube_Audio.mp3",
-                    caption: "📄 *Document download*"
-                }, { quoted: receivedMsg });
-                break;
-
-            default:
-                await conn.sendMessage(senderID, {
-                    text: "❌ Invalid option! Reply with 1 or 2.",
-                    quoted: receivedMsg
-                });
-        }
-
-        delete global._videoSimple[messageID];
-
-    } catch (err) {
-        console.error("Reply handler error:", err.message);
+    } catch (error) {
+        console.error(error);
+        reply("❌ An error occurred: ${error.message}");
     }
 });
-
 //mp4 download
 
 cmd({ 
@@ -750,7 +724,7 @@ async (conn, mek, m, { from, args, quoted, reply }) => {
                         caption: "🎥 *Here is your TikTok video!*"
                     }, { quoted: mek });
                 } else {
-                    reply("❎ Invalid option. Please reply with `1` for video or `2` for audio.");
+                    reply("❎ Invalid option. Please reply with `1` for audio or `2` for video.");
                 }
             }
         });
