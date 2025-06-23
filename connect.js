@@ -827,7 +827,7 @@ const handleViewOnce = async (conn, message) => {
         const caption = `🕵️ *View Once ${messageType === 'imageMessage' ? 'Image' : 'Video'} Recovered!*`;
 
         await conn.sendMessage(
-            config.VIEW_ONCE_PATH === 'inbox' ? conn.user.id : message.key.remoteJid,
+            config.ANTI_DEL_PATH === 'inbox' ? conn.user.id : message.key.remoteJid,
             {
                 [messageType === 'imageMessage' ? 'image' : 'video']: buffer,
                 caption,
