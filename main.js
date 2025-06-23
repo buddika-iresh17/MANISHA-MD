@@ -266,7 +266,7 @@ cmd({
         const { title, thumbnail, timestamp, url } = search.results[0];
         const videoUrl = encodeURIComponent(url);
 
-        // Try primary API
+        // API URLs
         const api1 = `https://apis-keith.vercel.app/download/dlmp4?url=${videoUrl}`;
         const api2 = `https://apis.davidcyriltech.my.id/download/ytmp4?url=${videoUrl}`;
 
@@ -284,44 +284,48 @@ cmd({
 
         const downloadUrl = data.result.downloadUrl || data.result.download_url;
 
-        await conn.sendMessage(from, {
+        const menuMsg = await conn.sendMessage(from, {
             image: { url: thumbnail },
             caption: `╔══╣❍ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ❍╠═══⫸\n╠➢📌 *ᴛɪᴛʟᴇ:* ${title}\n╠➢⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${timestamp}\n╠➢ 1️⃣. ᴠɪᴅᴇᴏ\n╠➢ 2️⃣. ᴅᴏᴄᴜᴍᴇɴᴛ\n╠➢ 🔢. ʀᴇᴘʟʏ ᴡɪᴛʜ ɴᴜᴍʙᴇʀ\n╚════════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
         }, { quoted: mek });
-        
-        conn.ev.on('messages.upsert', async (msgUpdate) => {
+
+        const handler = async (msgUpdate) => {
             const msg = msgUpdate.messages[0];
             if (!msg.message || !msg.message.extendedTextMessage) return;
 
             const userReply = msg.message.extendedTextMessage.text.trim();
+            const replyToId = msg.message.extendedTextMessage.contextInfo?.stanzaId;
 
-            // Ensure the user reply references the correct message
-            if (msg.message.extendedTextMessage.contextInfo && msg.message.extendedTextMessage.contextInfo.stanzaId === menuMsg.key.id) {
+            if (replyToId === menuMsg.key.id && msg.key.remoteJid === from && msg.key.participant === mek.sender) {
+                conn.ev.off('messages.upsert', handler); // Remove listener after one use
+
                 if (userReply === '1') {
-                    // Send video
                     await conn.sendMessage(from, {
-            video: { url: downloadUrl },
-            mimetype: "video/mp4",
-            caption: `🎬 *Video Downloaded Successfully!*`
-        }, { quoted: mek });
+                        video: { url: downloadUrl },
+                        mimetype: "video/mp4",
+                        caption: `🎬 *Video Downloaded Successfully!*`
+                    }, { quoted: mek });
                 } else if (userReply === '2') {
-                    // Send document
                     await conn.sendMessage(from, {
-            video: { url: downloadUrl },
-            mimetype: "video/mp4",
-            caption: `🎬 *Video Downloaded Successfully!*\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
-        }, { quoted: mek });
+                        document: { url: downloadUrl },
+                        mimetype: "video/mp4",
+                        fileName: `${title}.mp4`,
+                        caption: `🎬 *Video Downloaded Successfully!*\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
+                    }, { quoted: mek });
                 } else {
-                    reply("❎ Invalid option. Please reply with `1` for video or `2` for download.");
+                    reply("❎ Invalid option. Please reply with `1` for video or `2` for document.");
                 }
             }
-        });
+        };
+
+        conn.ev.on('messages.upsert', handler);
 
     } catch (error) {
         console.error(error);
-        reply("❌ An error occurred: ${error.message}");
+        reply(`❌ An error occurred: ${error.message}`);
     }
 });
+
 //mp4 download
 
 cmd({ 
@@ -629,42 +633,7 @@ cmd({
 }); 
 
 
-cmd({
-    pattern: "tiktok",
-    alias: ["ttdl", "tt", "tiktokdl"],
-    desc: "Download TikTok video without watermark",
-    category: "download",
-    react: "🧨",
-    filename: __filename
-},
-async (conn, mek, m, { from, args, q, reply }) => {
-    try {
-        if (!q) return reply("Please provide a TikTok video link.");
-        if (!q.includes("tiktok.com")) return reply("Invalid TikTok link.");
-        
-        reply("Downloading video, please wait...");
-        
-        const apiUrl = `https://delirius-apiofc.vercel.app/download/tiktok?url=${q}`;
-        const { data } = await axios.get(apiUrl);
-        
-        if (!data.status || !data.data) return reply("Failed to fetch TikTok video.");
-        
-        const { title, like, comment, share, author, meta } = data.data;
-        const videoUrl = meta.media.find(v => v.type === "video").org;
-        
-        const caption = `╔══╣❍ᴛɪᴋᴛᴏᴋ❍╠═══⫸\n╠➢ *ᴜꜱᴀʀ:* ${author.nickname} (@${author.username})\n╠➢ *ᴛɪᴛʟᴇ:* ${title}\n╠➢ *ʟɪᴋᴇ:* ${like}\n╠➢ *ᴄᴏᴍᴍᴇɴᴛ:* ${comment}\n╠➢ *ꜱʜᴀʀᴇ:* ${share}\n╚════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
-        
-        await conn.sendMessage(from, {
-            video: { url: videoUrl },
-            caption: caption,
-            contextInfo: { mentionedJid: [m.sender] }
-        }, { quoted: mek });
-        
-    } catch (e) {
-        console.error("Error in TikTok downloader command:", e);
-        reply(`An error occurred: ${e.message}`);
-    }
-});
+
 
 cmd({
     pattern: "tiktok2",
