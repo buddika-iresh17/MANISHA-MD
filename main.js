@@ -3161,6 +3161,28 @@ async (conn, mek, m, {
     reply(`❌ *Error:* ${e.message}`);
   }
 });
+  cmd({
+  pattern: "pingg",
+  alias: ["test", "check"],
+  desc: "Check bot response time",
+  category: "tools",
+  react: "🏓",
+  filename: __filename
+},
+async(conn, mek, m, { reply, from }) => {
+  try {
+    const start = new Date().getTime();
+    const buttons = [
+      { buttonId: 'ping', buttonText: { displayText: '🏓 Pong' }, type: 1 }
+    ];
+    const end = new Date().getTime();
+    const speed = end - start;
+    await conn.sendButtonText(from, buttons, `*Pong!*\nResponse: ${speed}ms`, 'Manisha-MD Bot', mek);
+  } catch (e) {
+    console.error(e);
+    reply(`*Error:* ${e.message}`);
+  }
+});
 //============= module.exports simble===================
 };
 //========================================================
