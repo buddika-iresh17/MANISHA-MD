@@ -3165,7 +3165,7 @@ async (conn, mek, m, {
   // plugins/menu.js
 
 cmd({
-  pattern: 'menu',
+  pattern: 'bmenu',
   alias: ['help', 'cmd'],
   desc: 'Display the bot command menu',
   category: 'main',
