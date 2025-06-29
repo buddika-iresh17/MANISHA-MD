@@ -3161,23 +3161,58 @@ async (conn, mek, m, {
     reply(`❌ *Error:* ${e.message}`);
   }
 });
-  cmd({
-  pattern: "pingg",
-  alias: ["test", "check"],
-  desc: "Check bot response time",
-  category: "tools",
-  react: "🏓",
+  //============
+  // plugins/menu.js
+
+cmd({
+  pattern: 'menu',
+  alias: ['help', 'cmd'],
+  desc: 'Display the bot command menu',
+  category: 'main',
+  react: '📋',
   filename: __filename
 },
-async(conn, mek, m, { reply, from }) => {
+async (conn, mek, m, {
+  from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber,
+  botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName,
+  participants, groupAdmins, isBotAdmins, isAdmins, reply, prefix
+}) => {
   try {
-    const start = new Date().getTime();
-    const buttons = [
-      { buttonId: 'ping', buttonText: { displayText: '🏓 Pong' }, type: 1 }
+    const sections = [
+      {
+        title: "📁 Downloader",
+        rows: [
+          { title: "🎵 Download Song", rowId: `${prefix}song Despacito` },
+          { title: "🎬 Download Video", rowId: `${prefix}video Never Gonna Give You Up` },
+          { title: "🔞 Xvideos Download", rowId: `${prefix}xvideos URL_HERE` },
+        ],
+      },
+      {
+        title: "⚙️ System Info",
+        rows: [
+          { title: "📊 Ping", rowId: `${prefix}ping` },
+          { title: "🕐 Runtime", rowId: `${prefix}runtime` },
+          { title: "✅ Alive Check", rowId: `${prefix}alive` },
+        ],
+      },
+      {
+        title: "👤 Bot Info",
+        rows: [
+          { title: "👑 Owner", rowId: `${prefix}owner` },
+          { title: "🔧 System", rowId: `${prefix}system` },
+        ],
+      }
     ];
-    const end = new Date().getTime();
-    const speed = end - start;
-    await conn.sendButtonText(from, buttons, `*Pong!*\nResponse: ${speed}ms`, 'Manisha-MD Bot', mek);
+
+    const listMessage = {
+      text: '🌀 *ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Menu*',
+      footer: 'Choose a command from below 👇',
+      title: '📋 MANISHA-MD Full Command List',
+      buttonText: '📂 Open Menu',
+      sections
+    };
+
+    await conn.sendMessage(m.chat, listMessage, { quoted: m });
   } catch (e) {
     console.error(e);
     reply(`*Error:* ${e.message}`);
