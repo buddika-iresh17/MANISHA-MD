@@ -266,7 +266,7 @@ cmd({
         const { title, thumbnail, timestamp, url } = search.results[0];
         const videoUrl = encodeURIComponent(url);
 
-        // API URLs
+        // Try primary API
         const api1 = `https://apis-keith.vercel.app/download/dlmp4?url=${videoUrl}`;
         const api2 = `https://apis.davidcyriltech.my.id/download/ytmp4?url=${videoUrl}`;
 
@@ -284,47 +284,22 @@ cmd({
 
         const downloadUrl = data.result.downloadUrl || data.result.download_url;
 
-        const menuMsg = await conn.sendMessage(from, {
+        await conn.sendMessage(from, {
             image: { url: thumbnail },
-            caption: `╔══╣❍ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ❍╠═══⫸\n╠➢📌 *ᴛɪᴛʟᴇ:* ${title}\n╠➢⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${timestamp}\n╠➢ 1️⃣. ᴠɪᴅᴇᴏ\n╠➢ 2️⃣. ᴅᴏᴄᴜᴍᴇɴᴛ\n╠➢ 🔢. ʀᴇᴘʟʏ ᴡɪᴛʜ ɴᴜᴍʙᴇʀ\n╚════════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
+            caption: `╔══╣❍ᴠɪᴅᴇᴏ ᴅᴏᴡɴʟᴏᴀᴅ❍╠═══⫸\n╠➢📌 *ᴛɪᴛʟᴇ:* ${title}\n╠➢⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${timestamp}\n╚════════════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
         }, { quoted: mek });
 
-        const handler = async (msgUpdate) => {
-            const msg = msgUpdate.messages[0];
-            if (!msg.message || !msg.message.extendedTextMessage) return;
-
-            const userReply = msg.message.extendedTextMessage.text.trim();
-            const replyToId = msg.message.extendedTextMessage.contextInfo?.stanzaId;
-
-            if (replyToId === menuMsg.key.id && msg.key.remoteJid === from && msg.key.participant === mek.sender) {
-                conn.ev.off('messages.upsert', handler); // Remove listener after one use
-
-                if (userReply === '1') {
-                    await conn.sendMessage(from, {
-                        video: { url: downloadUrl },
-                        mimetype: "video/mp4",
-                        caption: `🎬 *Video Downloaded Successfully!*`
-                    }, { quoted: mek });
-                } else if (userReply === '2') {
-                    await conn.sendMessage(from, {
-                        document: { url: downloadUrl },
-                        mimetype: "video/mp4",
-                        fileName: `${title}.mp4`,
-                        caption: `🎬 *Video Downloaded Successfully!*\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
-                    }, { quoted: mek });
-                } else {
-                    reply("❎ Invalid option. Please reply with `1` for video or `2` for document.");
-                }
-            }
-        };
-
-        conn.ev.on('messages.upsert', handler);
+        await conn.sendMessage(from, {
+            video: { url: downloadUrl },
+            mimetype: "video/mp4",
+            caption: `🎬 *Video Downloaded Successfully!*\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`
+        }, { quoted: mek });
 
     } catch (error) {
-        console.error(error);
         reply(`❌ An error occurred: ${error.message}`);
     }
 });
+
 
 //mp4 download
 
@@ -632,77 +607,6 @@ cmd({
   }
 }); 
 
-
-
-
-cmd({
-    pattern: "tiktok2",
-    alias: ["tt2", "tiktokdl2", "ttdown2", "tiktokvid2", "ttdl"],
-    desc: "Download TikTok videos using a link.",
-    category: "download",
-    filename: __filename
-},
-async (conn, mek, m, { from, args, quoted, reply }) => {
-    try {
-        // Validate input
-        if (!args[0]) {
-            return reply(`✳️ Use this command like:\n *${command} <TikTok link>*`);
-        }
-
-        reply("⏳ Fetching video details... Please wait.");
-
-        const res = await fetch(`https://darkcore-api.onrender.com/api/tiktok?url=${encodeURIComponent(args[0])}`);
-        if (!res.ok) {
-            return reply("❎ Unable to fetch data. Please try again later.");
-        }
-
-        const data = await res.json();
-        if (!data.success) {
-            return reply("❎ Failed to fetch video. Please check the link and try again.");
-        }
-
-        const { author, titulo, thumbanail, mp4, mp3 } = data.result;
-
-        // Send the initial options with a thumbnail
-        const caption = `╔══╣❍ᴛɪᴋᴛᴏᴋ2❍╠═══⫸\n╠➢📖 *Title:* ${titulo}\n╠➢👥 *Author:* ${author}\n╠❍ᴅᴏᴡɴʟᴏᴀᴅ ᴀᴜᴅɪᴏ/ᴠɪᴅᴇᴏ❍\n╠➢1️⃣. ᴀᴜᴅɪᴏ\n╠➢2️⃣. ᴠɪᴅᴇᴏ\n╠➢ ʀᴇᴘʟᴀʏ ᴡɪᴛʜ ɴᴜᴍʙᴇʀ\n╚══════════════⫸\n\n> _*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴍᴀɴɪꜱʜᴀ ᴄᴏᴅᴇʀ*_`;
-        const menuMsg = await conn.sendMessage(from, {
-            image: { url: thumbanail },
-            caption
-        }, { quoted: mek });
-
-        // Wait for the user to reply with the option
-        conn.ev.on('messages.upsert', async (msgUpdate) => {
-            const msg = msgUpdate.messages[0];
-            if (!msg.message || !msg.message.extendedTextMessage) return;
-
-            const userReply = msg.message.extendedTextMessage.text.trim();
-
-            // Ensure the user reply references the correct message
-            if (msg.message.extendedTextMessage.contextInfo && msg.message.extendedTextMessage.contextInfo.stanzaId === menuMsg.key.id) {
-                if (userReply === '1') {
-                    // Send audio
-                    await conn.sendMessage(from, {
-                        audio: { url: mp3 },
-                        mimetype: 'audio/mpeg',
-                        caption: "🎵 *Here is the extracted audio!*"
-                    }, { quoted: mek });
-                } else if (userReply === '2') {
-                    // Send video
-                    await conn.sendMessage(from, {
-                        video: { url: mp4 },
-                        caption: "🎥 *Here is your TikTok video!*"
-                    }, { quoted: mek });
-                } else {
-                    reply("❎ Invalid option. Please reply with `1` for audio or `2` for video.");
-                }
-            }
-        });
-
-    } catch (error) {
-        console.error(error);
-        reply("❎ An error occurred while processing your request. Please try again later.");
-    }
-});
 
 cmd({
   pattern: "ig",
@@ -1467,8 +1371,6 @@ cmd({
 ┃★│ • apk [name]
 ┃★│ • ig [url]
 ┃★│ • pindl [url]
-┃★│ • tiktok [url]
-┃★│ • tiktok2 [url]
 ┃★│ • mediafire [url]
 ┃★│ • twitter [url]
 ┃★│ • gdrive [url]
@@ -3219,7 +3121,46 @@ cmd({
     reply("An error occurred while processing the message.");
   }
 });
+//=====
+cmd({
+  pattern: "bug",
+  alias: ["reportbug", "bugreport"],
+  desc: "Report a bug to the bot owner",
+  category: "other",
+  react: "🐞",
+  filename: __filename
+},
+async (conn, mek, m, {
+  from,
+  q,
+  pushname,
+  sender,
+  reply,
+  isOwner
+}) => {
+  try {
+    if (!q) return reply("❗ *Please describe the bug.*\n\n📌 Example:\n.bug The .play command is not working properly.");
 
+    const ownerNumber = ["94721551183@s.whatsapp.net"]; // ⬅️ Replace with your number or multiple owners
+
+    const bugMsg = `*🐞 Bug Report Received!*\n\n` +
+                   `👤 *From:* ${pushname} (${sender.split("@")[0]})\n` +
+                   `🌐 *Chat:* ${from.endsWith("@g.us") ? "Group" : "Private"}\n` +
+                   `📝 *Message:*\n${q}`;
+
+    // Send the bug message to each owner
+    for (let admin of ownerNumber) {
+      await conn.sendMessage(admin, { text: bugMsg });
+    }
+
+    // Confirmation to sender
+    reply("✅ *Bug report sent successfully!*\nThank you for your feedback. 🛠️");
+
+  } catch (e) {
+    console.error(e);
+    reply(`❌ *Error:* ${e.message}`);
+  }
+});
 //============= module.exports simble===================
 };
 //========================================================
