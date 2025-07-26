@@ -90,18 +90,21 @@ const lib_url = "https://raw.githubusercontent.com/buddika-iresh17/Exsample/refs
   setInterval(clearTempDir, 5 * 60 * 1000);
   
   //===================SESSION-AUTH============================
-if (!fs.existsSync(__dirname + '/creds.json')) {
+const sessionPath = path.join(__dirname, 'creds.json'); // now saving without folder
+
+if (!fs.existsSync(sessionPath)) {
   if (!config.SESSION_ID) {
     return console.log('🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Please add your session id ! 😥...');
   }
 
   const sessdata = config.SESSION_ID;
-  const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
+  const file = File.fromURL(`https://mega.nz/file/${sessdata}`);
 
-  filer.download((err, data) => {
+  file.download((err, data) => {
     if (err) throw err;
-    fs.writeFile(__dirname + '/creds.json', data, () => {
-      console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Session downloaded and saved without folder 🧶...");
+
+    fs.writeFile(sessionPath, data, () => {
+      console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Session downloaded and saved to root folder 🧶...");
     });
   });
 }
