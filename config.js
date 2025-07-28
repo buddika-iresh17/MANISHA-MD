@@ -6,12 +6,12 @@ function convertToBool(text, fault = 'true') {
 }
 
 module.exports = {
-    SESSION_ID: process.env.SESSION_ID || "",
+    SESSION_ID: process.env.SESSION_ID || "9qcVDJIK#yW695R5aFOCHRV0Z4Q69JxY6gltw_hSQl5pmbDfepZU",
     MODE: process.env.MODE || "private",
     PREFIX: process.env.PREFIX || ".",
     AUTO_REACT: process.env.AUTO_REACT || "false",
     ANTI_DEL_PATH: process.env.ANTI_DEL_PATH || "inbox",
-    DEV: process.env.DEV || "",
+    DEV: process.env.DEV || "94721551183",
     READ_MESSAGE: process.env.READ_MESSAGE || "false",
     AUTO_READ_STATUS: process.env.AUTO_READ_STATUS || "false",
     AUTO_STATUS_REPLY: process.env.AUTO_STATUS_REPLY || "false",
