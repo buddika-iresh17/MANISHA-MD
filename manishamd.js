@@ -3,9 +3,8 @@ require('dotenv').config(); // Load .env if exists
 // ================== CONFIG SETTINGS ==================
 
 const settings = {
-    SESSION_ID: process.env.SESSION_ID || "",//enter session id 
-    OWNER: process.env.OWNER || "", //bot owner number
-    DEV: process.env.DEV || "", //bot owner number
+    SESSION_ID: process.env.SESSION_ID || "pmkXBIZC#3rU34xpYY7H_DepHcY4Sl2Q-N4VJ12TCTuPBBubcWBA",//enter session id 
+    OWNER: process.env.OWNER || "94721551183", //bot owner number
     MODE: process.env.MODE || "private", //bot mode (private/ public/ inbox/ group)
     PREFIX: process.env.PREFIX || ".", // bot command prefix
     WELCOME: process.env.WELCOME || "true", //group 
