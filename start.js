@@ -1163,53 +1163,54 @@ async function gifToVideo(gifBuffer) {
 
   //===================SESSION-AUTH============================
 
-const sessionFile = path.join(__dirname, 'creds.json')
+const sessionFile = path.join(__dirname, 'creds');
 
 if (!fs.existsSync(sessionFile)) {
   if (!config.SESSION_ID) {
-    console.log('🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Please add your session id in config.SESSION_ID! 😥...')
+    console.log('🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Please add your session id in config.SESSION_ID! 😥...');
   } else {
-    const sessdata = config.SESSION_ID
-    const filer = File.fromURL(`https://mega.nz/file/${sessdata}`)
+    const sessdata = config.SESSION_ID;
+    const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
     filer.download((err, data) => {
-      if (err) throw err
-      fs.writeFile(sessionFile, data, () => {
-        console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Session downloaded and saved 🧶 ...")
-      })
-    })
+      if (err) throw err;
+      if (!fs.existsSync(sessionFile)) fs.mkdirSync(sessionFile); // create folder
+      fs.writeFileSync(path.join(sessionFile, 'creds.json'), data);
+      console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Session downloaded and saved 🧶 ...");
+    });
   }
 }
 
 //=================== BOT CONNECT ===================
 async function connectToWA() {
-  console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Connecting to WhatsApp 🪀...")
+  console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Connecting to WhatsApp 🪀...");
 
-  const { state, saveCreds } = useSingleFileAuthState(sessionFile)
-  const { version } = await fetchLatestBaileysVersion()
+  const { state, saveCreds } = await useMultiFileAuthState(sessionFile);
+  const { version } = await fetchLatestBaileysVersion();
 
   const conn = makeWASocket({
     logger: P({ level: 'silent' }),
     printQRInTerminal: false,
-    browser: Browsers.macOS("Firefox"),
+    browser: Browsers.macOS('Firefox'),
     syncFullHistory: true,
     auth: state,
     version
-  })
+  });
 
-  // 🔹 Auto-save session
-  conn.ev.on('creds.update', saveCreds)
+  conn.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect } = update;
+    if (connection === 'close') {
+      const statusCode = lastDisconnect?.error?.output?.statusCode;
+      if (statusCode !== DisconnectReason.loggedOut) {
+        console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Reconnecting...");
+        connectToWA();
+      } else {
+        console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Logged out, please add a new SESSION_ID");
+      }
+    } else if (connection === 'open') {
+      console.log('Plugins installed ✅');
+      console.log('Bot connected ✅');
 
-  // 🔹 Connection updates
-  conn.ev.on("connection.update", (update) => {
-    const { connection, lastDisconnect } = update
-    if (connection === "close") {
-      const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
-      console.log("Connection closed. Reconnecting:", shouldReconnect)
-      if (shouldReconnect) connectToWA()
-    } else if (connection === "open") {
-      console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Plugins loaded successfully ✅...")
-
-      let up = `╔═══╣❍ᴍᴀɴɪꜱʜᴀ-ᴍᴅ❍╠═══⫸
+      const up = `╔═══╣❍ᴍᴀɴɪꜱʜᴀ-ᴍᴅ❍╠═══⫸
 ║ ✅ Bot Connected Successfully!
 ╠════════════➢
 ╠➢ 🔖 Prefix : [${prefix}]
@@ -1224,14 +1225,16 @@ async function connectToWA() {
 ║ MANISHA-MD is a powerful, multipurpose WhatsApp bot
 ║ built for automation, moderation, entertainment,
 ║ AI integration, and much more.
-╚═════════════════════⫸`
+╚═════════════════════⫸`;
 
-      conn.sendMessage(ownerNumber + "@s.whatsapp.net", {
-        image: { url: `https://i.ibb.co/6RzcnLWR/jpg.jpg` },
+      await conn.sendMessage(`${ownerNumber}@s.whatsapp.net`, {
+        image: { url: 'https://i.ibb.co/6RzcnLWR/jpg.jpg' },
         caption: up
-      })
+      });
     }
-  })
+  });
+
+  conn.ev.on('creds.update', saveCreds);
   //==============================
 
   conn.ev.on('messages.update', async updates => {
@@ -8039,20 +8042,17 @@ commands.map(async (command) => {
         };
     conn.serializeM = mek => sms(conn, mek, store);
   }
- 
 //=================== EXPRESS SERVER ===================
- 
-const express = require("express");
 const app = express();
 const port = process.env.PORT || 9090;
 
 app.get("/", (req, res) => {
-  res.send("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 bot start 🚩...")
-})
+  res.send("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 bot start 🚩...");
+});
 
-app.listen(port, () => console.log(`🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Server running 🏃:${port}`))
+app.listen(port, () => console.log(`🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Server running 🏃:${port}`));
 
 //=================== START BOT ===================
 setTimeout(() => {
-  connectToWA()
-}, 4000) 
+  connectToWA();
+}, 4000);
