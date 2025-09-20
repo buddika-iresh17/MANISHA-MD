@@ -68,7 +68,7 @@ const cache = new NodeCache({ stdTTL: 120 });
 
 // 🌐 YouTube and Media Downloaders
 const yts = require("yt-search");
-const ytsearch = require('@dark-yasiya/yt-dl.js').ytsearch;
+const { ytsearch, ytmp3, ytmp4 } = require('@dark-yasiya/yt-dl.js');
 const ddownr = require('denethdev-ytmp3');
 const getFbVideoInfo = require("@xaviabot/fb-downloader");
 
@@ -1207,9 +1207,8 @@ async function connectToWA() {
         console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Logged out, please add a new SESSION_ID");
       }
     } else if (connection === 'open') {
-      console.log('Plugins installed ✅');
-      console.log('Bot connected ✅');
-
+      console.log("🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Plugins loaded successfully ✅...");
+      
       const up = `╔═══╣❍ᴍᴀɴɪꜱʜᴀ-ᴍᴅ❍╠═══⫸
 ║ ✅ Bot Connected Successfully!
 ╠════════════➢
@@ -1660,227 +1659,155 @@ cmd({
 
 //========= song download ============
 
+
+let searchResults = {}; // temporary storage for search results per chat
+
+// ======================== YT SEARCH & SELECT ========================
 cmd({
   pattern: "song",
-  desc: "Download songs.",
+  alias: ["mp3"],
+  react: "🎵",
+  desc: "Search and download a song from YouTube",
   category: "download",
-  react: '🎧',
+  use: "<keyword>",
   filename: __filename
-}, async (messageHandler, context, quotedMessage, { from, reply, q }) => {
+}, async (conn, m, mek, { from, reply, q }) => {
   try {
-    if (!q) return reply("*Please give me url or title*");
+    if (!q) return reply("❌ Please provide a search keyword!");
     
-    // Search for the song using yt-search
-    const searchResults = await yts(q);
-    if (!searchResults || searchResults.videos.length === 0) {
-      return reply("*No Song Found Matching Your Query*");
-    }
-
-    const songData = searchResults.videos[0];
-    const songUrl = songData.url;
-
-    // Using denethdev-ytmp3 to fetch the download link
-    const result = await ddownr.download(songUrl, 'mp3'); // Download in mp3 format
-    const downloadLink = result.downloadUrl; // Get the download URL
+    // Search YouTube
+    const result = await ytsearch(q);
+    if (!result || !result.results || result.results.length === 0)
+      return reply("❌ No results found!");
     
-         let songDetailsMessage = `*${BOT} SONG DOWNLOAD* 🎵
-         
-🎵 *Title:* ${songData.title}
-⏳ *Duration:* ${songData.timestamp}
-📊 *Views:* ${songData.views}
-📅 *Uploaded:* ${songData.ago}
-🖊 *Author:* ${songData.author.name}
-🔗 *Watch Now:* ${songData.url}
+    // Store top 5 results for this chat
+    searchResults[from] = result.results.slice(0, 5);
 
-*Select Download Format:*
-
-*1 ||* Audio File  🎶
-*2 ||* Document File  📂
-
-${CREATER}`;
-    // Send the video thumbnail with song details
-    const sentMessage = await messageHandler.sendMessage(from, {
-      image: { url: songData.thumbnail },
-      caption: songDetailsMessage,
-    }, { quoted: quotedMessage });
-
-    // Listen for the user's reply to select the download format
-    messageHandler.ev.on("messages.upsert", async (update) => {
-      const message = update.messages[0];
-      if (!message.message || !message.message.extendedTextMessage) return;
-
-      const userReply = message.message.extendedTextMessage.text.trim();
-
-      // Handle the download format choice
-      if (message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id) {
-      // React to the user’s reply message directly
-      await messageHandler.sendMessage(from, { 
-         react: { text: "⬆️", key: message.key } 
-        });
-        switch (userReply) {
-          case '1': // Audio File
-            await messageHandler.sendMessage(from, {
-              audio: { url: downloadLink },
-              mimetype: "audio/mpeg"
-            }, { quoted: quotedMessage });
-            
-      // Change the reaction to once the file upload is complete
-        await messageHandler.sendMessage(from, { 
-          react: { text: "✅", key: message.key } 
-        });
-            break;
-          case '2': // Document File
-            await messageHandler.sendMessage(from, {
-              document: { url: downloadLink },
-              mimetype: 'audio/mpeg',
-              fileName: `${songData.title}.mp3`,
-              caption: `${CREATER}`
-            }, { quoted: quotedMessage });
-      // Change the reaction to once the file upload is complete
-        await messageHandler.sendMessage(from, { 
-          react: { text: "✅", key: message.key } 
-        });
-            break;
-          default:
-            reply("*Invalid Option. Please Select A Valid Option*");
-            break;
-        }
-      }
+    // Send search results
+    let text = "🔎 Top 5 Results:\n";
+    searchResults[from].forEach((video, i) => {
+      text += `\n${i + 1}. ${video.title} (${video.timestamp})\n${video.url}\n`;
     });
-    } catch (e) {
-      console.log(e);
-      reply(`❌ Error: ${e.message}`);
-    }
-  }
-);
-//============ video download ================
+    text += `\nReply with the number (1-5) to download as mp3.`;
+    reply(text);
 
-cmd({
-  pattern: "video",
-  alias: ["ytvideo", "mp4"],
-  react: "📽",
-  desc: "Download YouTube video (MP4)",
-  category: "download",
-  use: ".video2 <query>",
-  filename: __filename,
-}, async (conn, mek, m, { from, reply, q }) => {
-  try {
-    if (!q) return reply("❓ What video do you want to download? Please provide a search term.");
-
-    const search = await yts(q);
-    if (!search?.videos?.length) return reply("❌ No results found for your query.");
-
-    const {
-      title,
-      thumbnail,
-      timestamp,
-      url,
-      views,
-      ago,
-      author
-    } = search.videos[0];
-
-    const videoUrl = encodeURIComponent(url);
-
-    // API URLs
-    const api1 = `https://apis-keith.vercel.app/download/dlmp4?url=${videoUrl}`;
-    const api2 = `https://api.giftedtech.web.id/api/download/ytmp4?apikey=gifted&url=${videoUrl}`;
-
-    let data;
-
-    try {
-      const res1 = await fetch(api1);
-      data = await res1.json();
-      if (!data?.status || !data?.result?.downloadUrl) throw new Error("Primary API failed");
-    } catch {
-      const res2 = await fetch(api2);
-      data = await res2.json();
-      if (!data?.success || (!data?.result?.download_url && !data?.result?.downloadUrl)) {
-        throw new Error("Both APIs failed");
-      }
-    }
-
-    const downloadUrl = data.result.downloadUrl || data.result.download_url;
-    const quotedMessage = mek.quoted || m.quoted || mek;
-
-    const caption = `*${BOT} VIDEO DOWNLOAD* 🎬
-
-🎥 *Title:* ${title}
-⏳ *Duration:* ${timestamp}
-📊 *Views:* ${views}
-📅 *Uploaded:* ${ago}
-🖊 *Author:* ${author.name || 'Unknown'}
-🔗 *Watch:* ${url}
-
-*Select Download Format:*
-
-*1 ||* Video File 🎥
-*2 ||* Document File 📂
-
-${CREATER}`;
-
-    const sentMsg = await conn.sendMessage(from, {
-      image: { url: thumbnail },
-      caption
-    }, { quoted: quotedMessage });
-
-    const listener = async (update) => {
-      const msg = update.messages?.[0];
-      if (!msg?.message?.extendedTextMessage) return;
-
-      const userReply = msg.message.extendedTextMessage.text?.trim();
-      const contextId = msg.message.extendedTextMessage.contextInfo?.stanzaId;
-
-      if (contextId === sentMsg.key.id) {
-        conn.ev.off("messages.upsert", listener); // remove after matched reply
-
-        // React or fallback
-        try {
-          await conn.sendMessage(from, {
-            react: { text: "⬆️", key: msg.key }
-          });
-        } catch {
-          await conn.sendMessage(from, {
-            text: "⬆️ Uploading video...",
-            quoted: msg
-          });
-        }
-
-        if (userReply === "1") {
-          await conn.sendMessage(from, {
-            video: { url: downloadUrl },
-            caption: `🎬 ${title}\n\n${CREATER}`
-          }, { quoted: msg });
-        } else if (userReply === "2") {
-          await conn.sendMessage(from, {
-            document: { url: downloadUrl },
-            mimetype: "video/mp4",
-            fileName: `${title}.mp4`,
-            caption: `${CREATER}`
-          }, { quoted: msg });
-        } else {
-          await reply("*❌ Invalid Option. Please reply with 1 or 2.*");
-        }
-
-        // Final reaction
-        try {
-          await conn.sendMessage(from, {
-            react: { text: "✅", key: msg.key }
-          });
-        } catch {}
-      }
-    };
-
-    // Attach listener
-    conn.ev.on("messages.upsert", listener);
-    setTimeout(() => conn.ev.off("messages.upsert", listener), 2 * 60 * 1000); // auto-remove after 2 mins
-
-  } catch (e) {
-    console.error(e);
-    reply(`❌ Error: ${e.message}`);
+  } catch (err) {
+    console.error(err);
+    reply("❌ Failed to search YouTube!");
   }
 });
 
+// ======================== SELECT & DOWNLOAD MP3 ========================
+cmd({
+  pattern: "select",
+  alias: [],
+  react: "🎶",
+  desc: "Select a song from search results",
+  category: "download",
+  use: "<number>",
+  filename: __filename
+}, async (conn, m, mek, { from, reply, q }) => {
+  try {
+    if (!q) return reply("❌ Please provide a number (1-5)!");
+    if (!searchResults[from]) return reply("❌ No search results found. Use .song <keyword> first!");
+
+    const index = parseInt(q) - 1;
+    if (isNaN(index) || index < 0 || index >= searchResults[from].length)
+      return reply("❌ Invalid number! Choose 1-5.");
+
+    const video = searchResults[from][index];
+    const yturl = video.url;
+
+    // Download mp3
+    const result = await ytmp3(yturl);
+    const { title, url } = result.result;
+    await conn.sendMessage(from, { 
+      audio: { url: result.download.url },
+      mimetype: "audio/mpeg",
+      fileName: title + ".mp3",
+      caption: `🎵 Title: ${title}\n🔗 ${url}`
+    }, { quoted: m });
+
+    // Clear stored results
+    delete searchResults[from];
+
+  } catch (err) {
+    console.error(err);
+    reply("❌ Failed to download mp3!");
+  }
+});
+
+// ======================== VIDEO DOWNLOAD ========================
+cmd({
+  pattern: "video",
+  alias: ["mp4"],
+  react: "🎬",
+  desc: "Search and download a video from YouTube",
+  category: "download",
+  use: "<keyword>",
+  filename: __filename
+}, async (conn, m, mek, { from, reply, q }) => {
+  try {
+    if (!q) return reply("❌ Please provide a search keyword!");
+    
+    const result = await ytsearch(q);
+    if (!result || !result.results || result.results.length === 0)
+      return reply("❌ No results found!");
+
+    // Store top 5 results for this chat
+    searchResults[from] = result.results.slice(0, 5);
+
+    let text = "🔎 Top 5 Results:\n";
+    searchResults[from].forEach((video, i) => {
+      text += `\n${i + 1}. ${video.title} (${video.timestamp})\n${video.url}\n`;
+    });
+    text += `\nReply with the number (1-5) to download as mp4.`;
+    reply(text);
+
+  } catch (err) {
+    console.error(err);
+    reply("❌ Failed to search YouTube!");
+  }
+});
+
+cmd({
+  pattern: "selectvideo",
+  alias: [],
+  react: "🎥",
+  desc: "Select a video from search results",
+  category: "download",
+  use: "<number>",
+  filename: __filename
+}, async (conn, m, mek, { from, reply, q }) => {
+  try {
+    if (!q) return reply("❌ Please provide a number (1-5)!");
+    if (!searchResults[from]) return reply("❌ No search results found. Use .video <keyword> first!");
+
+    const index = parseInt(q) - 1;
+    if (isNaN(index) || index < 0 || index >= searchResults[from].length)
+      return reply("❌ Invalid number! Choose 1-5.");
+
+    const video = searchResults[from][index];
+    const yturl = video.url;
+
+    // Download mp4
+    const result = await ytmp4(yturl, "360p");
+    const { title, url } = result.result;
+    await conn.sendMessage(from, { 
+      video: { url: result.download.url },
+      mimetype: "video/mp4",
+      fileName: title + ".mp4",
+      caption: `🎬 Title: ${title}\n🔗 ${url}`
+    }, { quoted: m });
+
+    // Clear stored results
+    delete searchResults[from];
+
+  } catch (err) {
+    console.error(err);
+    reply("❌ Failed to download video!");
+  }
+});
 //============= spotify ================
 cmd({
     pattern: "spotify",
