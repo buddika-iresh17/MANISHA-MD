@@ -2498,6 +2498,55 @@ async (conn, mek, m, { from, q, reply }) => {
         reply(`❌ Failed to download file:\n${err.message || err}`);
     }
 });
+
+//==================== MEDIAFIRE DOWNLOADER ====================
+
+cmd({
+  pattern: "mediafire",
+  react: "📁",
+  alias: ["mf", "mfire"],
+  desc: "Download files from MediaFire",
+  category: "download",
+  use: "<mediafire link>",
+  filename: __filename
+},
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply("⚠️ Please provide a valid MediaFire link.\n\nExample: .mediafire https://www.mediafire.com/file/xxxx/file");
+
+    // API endpoint
+    let api = `https://delirius-apiofc.vercel.app/download/mediafire?url=${encodeURIComponent(q)}`;
+
+    // Fetch API response
+    let res = await fetch(api);
+    if (!res.ok) throw new Error(`❌ MediaFire API Error: ${res.status}`);
+    let json = await res.json();
+
+    if (!json.status) return reply("❌ Invalid MediaFire link or file not found!");
+
+    let data = json.data[0];
+    let caption = `📂 *MediaFire Downloader*
+    
+📝 *Filename:* ${data.filename}
+📏 *Size:* ${data.size}
+🗂️ *Extension:* ${data.extension}
+📑 *Mime:* ${data.mime}
+⏳ *Uploaded:* ${data.uploaded}
+🔗 *Link:* ${data.link}`;
+
+    // Send file with caption
+    await conn.sendMessage(from, {
+      document: { url: data.link },
+      fileName: data.filename,
+      mimetype: data.mime,
+      caption
+    }, { quoted: mek });
+
+  } catch (e) {
+    console.error(e);
+    reply("❌ Error while downloading the MediaFire file.");
+  }
+});
 //============= fb download ==============
 
 cmd({
