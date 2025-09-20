@@ -8043,6 +8043,7 @@ commands.map(async (command) => {
     conn.serializeM = mek => sms(conn, mek, store);
   }
 //=================== EXPRESS SERVER ===================
+const express = require("express");
 const app = express();
 const port = process.env.PORT || 9090;
 
