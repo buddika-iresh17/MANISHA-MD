@@ -1850,7 +1850,7 @@ cmd({
   react: "📽",
   desc: "Download YouTube video (MP4)",
   category: "download",
-  use: ".video2 <query>",
+  use: ".video <query>",
   filename: __filename,
 }, async (conn, mek, m, { from, reply, q }) => {
   try {
@@ -1869,14 +1869,13 @@ cmd({
       author
     } = search.videos[0];
 
-    const videoUrl = encodeURIComponent(url);
+    const encodedUrl = encodeURIComponent(url);
 
     // API URLs
-    const api1 = `https://apis-keith.vercel.app/download/dlmp4?url=${videoUrl}`;
-    const api2 = `https://api.giftedtech.web.id/api/download/ytmp4?apikey=gifted&url=${videoUrl}`;
+    const api1 = `https://api.giftedtech.web.id/api/download/ytv?apikey=gifted&url=${encodedUrl}`;
+    const api2 = `https://api.giftedtech.web.id/api/download/dlmp4?apikey=gifted&url=${encodedUrl}`;
 
     let data;
-
     try {
       const res1 = await fetch(api1);
       data = await res1.json();
@@ -1884,8 +1883,8 @@ cmd({
     } catch {
       const res2 = await fetch(api2);
       data = await res2.json();
-      if (!data?.success || (!data?.result?.download_url && !data?.result?.downloadUrl)) {
-        throw new Error("Both APIs failed");
+      if (!data?.success || (!data?.result?.downloadUrl && !data?.result?.download_url)) {
+        throw new Error("Both APIs failed to retrieve the video.");
       }
     }
 
@@ -1921,9 +1920,9 @@ ${CREATER}`;
       const contextId = msg.message.extendedTextMessage.contextInfo?.stanzaId;
 
       if (contextId === sentMsg.key.id) {
-        conn.ev.off("messages.upsert", listener); // remove after matched reply
+        conn.ev.on("messages.upsert", listener); // Detach listener after match
 
-        // React or fallback
+        // React to user's reply
         try {
           await conn.sendMessage(from, {
             react: { text: "⬆️", key: msg.key }
@@ -1948,7 +1947,7 @@ ${CREATER}`;
             caption: `${CREATER}`
           }, { quoted: msg });
         } else {
-          await reply("*❌ Invalid Option. Please reply with 1 or 2.*");
+          await reply("*❌ Invalid option. Please reply with 1 or 2.*");
         }
 
         // Final reaction
@@ -1956,13 +1955,13 @@ ${CREATER}`;
           await conn.sendMessage(from, {
             react: { text: "✅", key: msg.key }
           });
-        } catch {}
+        } catch { }
       }
     };
 
-    // Attach listener
+    // Listen for user reply
     conn.ev.on("messages.upsert", listener);
-    setTimeout(() => conn.ev.off("messages.upsert", listener), 2 * 60 * 1000); // auto-remove after 2 mins
+    setTimeout(() => conn.ev.off("messages.upsert", listener), 2 * 60 * 1000); // Remove listener after 2 minutes
 
   } catch (e) {
     console.error(e);
