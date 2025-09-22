@@ -1661,36 +1661,45 @@ cmd({
 
 cmd({
   pattern: "song",
-  alias: ["mp3"],
-  desc: "Download audio from YouTube",
+  alias: ["music", "ytmp3"],
+  react: "🎶",
+  desc: "Download YouTube song as MP3",
   category: "download",
-  use: "<YouTube URL or search text>",
-  filename: __filename
+  use: ".song <YouTube link or query>",
+  filename: __filename,
 }, async (conn, m, mek, { from, reply, q }) => {
   try {
-    if (!q) return reply("🧩 Please provide a YouTube link or search query.");
+    if (!q) return reply("❓ Please provide a YouTube URL or song name.");
 
-    // 🔍 Find video
-    let videoUrl;
-    if (q.startsWith("http")) {
-      videoUrl = q;
-    } else {
-      const search = await yts(q);
-      const video = search.videos[0];
-      if (!video) return reply("❌ Couldn't find any results.");
-      videoUrl = video.url;
+    let videoUrl = q;
+
+    // Search if not direct YouTube link
+    if (!q.includes("youtube.com") && !q.includes("youtu.be")) {
+      let search = await yts(q);
+      if (!search.videos || !search.videos.length) {
+        return reply("❌ No YouTube results found.");
+      }
+      videoUrl = search.videos[0].url;
     }
 
-    // 🎶 Get download info
-    const api = `https://api.giftedtech.web.id/api/download/ytaudio?apikey=gifted&format=128kbps&url=${encodeURIComponent(videoUrl)}`;
-    const res = await fetch(api);
-    const data = await res.json();
+    // Call API
+    const api = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(videoUrl)}`;
+    const res = await axios.get(api);
 
-    if (!data.success || !data.result) {
-      return reply("❌ Couldn't download audio. Try again.");
+    if (!res.data?.result?.download_url) {
+      return reply("⚠️ Failed to get download link.");
     }
 
-    const { title, thumbnail, url: download_url, timestamp, views, ago, author } = data.result;
+    const {
+      title,
+      timestamp,
+      views,
+      ago,
+      author,
+      videoUrl: watchUrl,
+      thumbnail,
+      download_url
+    } = res.data.result;
 
     const msg = `*🎵 SONG DOWNLOAD*
 
@@ -1698,23 +1707,25 @@ cmd({
 ⏳ *Duration:* ${timestamp}
 📊 *Views:* ${views}
 📅 *Uploaded:* ${ago}
-🖊 *Author:* ${author.name}
-🔗 *Watch Now:* ${videoUrl}
+🖊 *Author:* ${author?.name || "Unknown"}
+🔗 *Watch Now:* ${watchUrl}
 
 *Select Download Format:*
-1️⃣ Audio File  🎶
-2️⃣ Document File  📂`;
+1️⃣ Audio File 🎶
+2️⃣ Document File 📂`;
 
-    // Send video info
+    // Send info with thumbnail
     const sent = await conn.sendMessage(from, {
       image: { url: thumbnail },
       caption: msg
-    }, { quoted: m });
+    }, { quoted: mek });
 
-    // ⚡ Wait for user reply (only same user + reply to this message)
+    // Wait for user reply (1 or 2)
     conn.ev.on("messages.upsert", async (update) => {
-      const msgUpdate = update.messages[0];
-      if (!msgUpdate.message || !msgUpdate.key.fromMe) {
+      try {
+        const msgUpdate = update.messages[0];
+        if (!msgUpdate?.message) return;
+
         if (
           msgUpdate.key.remoteJid === from &&
           msgUpdate.message?.extendedTextMessage &&
@@ -1723,31 +1734,29 @@ cmd({
         ) {
           const choice = msgUpdate.message.extendedTextMessage.text.trim();
 
-          switch (choice) {
-            case "1":
-              await conn.sendMessage(from, {
-                audio: { url: download_url },
-                mimetype: "audio/mpeg",
-                fileName: `${title}.mp3`,
-                caption: "Downloaded by Bot"
-              }, { quoted: m });
-              break;
-
-            case "2":
-              await conn.sendMessage(from, {
-                document: { url: download_url },
-                mimetype: "audio/mpeg",
-                fileName: `${title}.mp3`,
-                caption: "Downloaded by Bot"
-              }, { quoted: m });
-              break;
-
-            default:
-              await reply("⚠️ Invalid option. Reply with `1` or `2`.");
+          if (choice === "1") {
+            await conn.sendMessage(from, {
+              audio: { url: download_url },
+              mimetype: "audio/mpeg",
+              fileName: `${title}.mp3`,
+              caption: "🎶 Downloaded by Bot"
+            }, { quoted: m });
+          } else if (choice === "2") {
+            await conn.sendMessage(from, {
+              document: { url: download_url },
+              mimetype: "audio/mpeg",
+              fileName: `${title}.mp3`,
+              caption: "📂 Downloaded by Bot"
+            }, { quoted: m });
+          } else {
+            await reply("⚠️ Invalid option. Reply with `1` or `2`.");
           }
         }
+      } catch (err) {
+        console.error("Reply Handler Error:", err.message);
       }
     });
+
   } catch (e) {
     console.error(e);
     reply(`❌ Error: ${e.message}`);
