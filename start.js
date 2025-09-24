@@ -1215,7 +1215,7 @@ async function connectToWA() {
 ╠➢ 🔖 Prefix : [${prefix}]
 ╠➢ 🔒 Mode   : [${config.MODE}]
 ╠➢ 🧬 Version : v1.0.0
-╠➢ 👑 Owner   : [${ownerNumber}]
+╠➢ 👑 Created Owner : [94721551183]
 ╠➢ 🛠️ Created By: Manisha coder
 ╠➢ 🧠 Framework : Node.js + Baileys
 ╠═══════════════════➢
@@ -1656,112 +1656,80 @@ cmd({
   }
 });
 //===================DOWNLOAD COMMAND======================
+const { ytmp3, ytmp4 } = require("sadaslk-dlcore");
 
-//========= song download ============
-
+// 🎵 SONG DOWNLOAD (MP3)
 cmd({
   pattern: "song",
-  alias: ["music", "ytmp3"],
-  react: "🎶",
-  desc: "Download YouTube song as MP3",
+  alias: ["mp3"],
+  react: "🎵",
+  desc: "Download YouTube Song as MP3",
   category: "download",
-  use: ".song <YouTube link or query>",
+  use: "<song name or YouTube link>",
   filename: __filename,
 }, async (conn, m, mek, { from, reply, q }) => {
   try {
-    if (!q) return reply("❓ Please provide a YouTube URL or song name.");
+    if (!q) return reply("🔎 Please provide a song name or YouTube link.");
 
-    let videoUrl = q;
+    let search = await yts(q);
+    let vid = search.videos[0];
+    if (!vid) return reply("⚠️ No song found!");
 
-    // Search if not direct YouTube link
-    if (!q.includes("youtube.com") && !q.includes("youtu.be")) {
-      let search = await yts(q);
-      if (!search.videos || !search.videos.length) {
-        return reply("❌ No YouTube results found.");
-      }
-      videoUrl = search.videos[0].url;
-    }
+    let mp3 = await ytmp3(vid.url);
 
-    // Call API
-    const api = `https://delirius-apiofc.vercel.app/download/ytmp3?url=${encodeURIComponent(videoUrl)}`;
-    const res = await axios.get(api);
+    let caption = `🎵 *Title:* ${vid.title}
+⏳ *Duration:* ${vid.timestamp}
+📊 *Views:* ${vid.views}
+📅 *Uploaded:* ${vid.ago}
+🖊 *Author:* ${vid.author.name}
+🔗 *Link:* ${vid.url}`;
 
-    if (!res.data?.result?.download_url) {
-      return reply("⚠️ Failed to get download link.");
-    }
-
-    const {
-      title,
-      timestamp,
-      views,
-      ago,
-      author,
-      videoUrl: watchUrl,
-      thumbnail,
-      download_url
-    } = res.data.result;
-
-    const msg = `*🎵 SONG DOWNLOAD*
-
-🎧 *Title:* ${title}
-⏳ *Duration:* ${timestamp}
-📊 *Views:* ${views}
-📅 *Uploaded:* ${ago}
-🖊 *Author:* ${author?.name || "Unknown"}
-🔗 *Watch Now:* ${watchUrl}
-
-*Select Download Format:*
-1️⃣ Audio File 🎶
-2️⃣ Document File 📂`;
-
-    // Send info with thumbnail
-    const sent = await conn.sendMessage(from, {
-      image: { url: thumbnail },
-      caption: msg
-    }, { quoted: mek });
-
-    // Wait for user reply (1 or 2)
-    conn.ev.on("messages.upsert", async (update) => {
-      try {
-        const msgUpdate = update.messages[0];
-        if (!msgUpdate?.message) return;
-
-        if (
-          msgUpdate.key.remoteJid === from &&
-          msgUpdate.message?.extendedTextMessage &&
-          msgUpdate.message.extendedTextMessage.contextInfo?.stanzaId === sent.key.id &&
-          msgUpdate.key.participant === m.sender
-        ) {
-          const choice = msgUpdate.message.extendedTextMessage.text.trim();
-
-          if (choice === "1") {
-            await conn.sendMessage(from, {
-              audio: { url: download_url },
-              mimetype: "audio/mpeg",
-              fileName: `${title}.mp3`,
-              caption: "🎶 Downloaded by Bot"
-            }, { quoted: m });
-          } else if (choice === "2") {
-            await conn.sendMessage(from, {
-              document: { url: download_url },
-              mimetype: "audio/mpeg",
-              fileName: `${title}.mp3`,
-              caption: "📂 Downloaded by Bot"
-            }, { quoted: m });
-          } else {
-            await reply("⚠️ Invalid option. Reply with `1` or `2`.");
-          }
-        }
-      } catch (err) {
-        console.error("Reply Handler Error:", err.message);
-      }
-    });
-
-  } catch (e) {
-    console.error(e);
-    reply(`❌ Error: ${e.message}`);
+    await conn.sendMessage(from, { audio: { url: mp3.dl_url }, mimetype: "audio/mpeg", ptt: false }, { quoted: mek });
+    reply(caption);
+  } catch (err) {
+    console.error(err);
+    reply("❌ Error downloading song!");
   }
 });
+
+
+// 🎥 VIDEO DOWNLOAD (MP4)
+cmd({
+  pattern: "video",
+  alias: ["mp4"],
+  react: "🎥",
+  desc: "Download YouTube Video as MP4",
+  category: "download",
+  use: "<video name or YouTube link>",
+  filename: __filename,
+}, async (conn, m, mek, { from, reply, q }) => {
+  try {
+    if (!q) return reply("🔎 Please provide a video name or YouTube link.");
+
+    let search = await yts(q);
+    let vid = search.videos[0];
+    if (!vid) return reply("⚠️ No video found!");
+
+    let mp4 = await ytmp4(vid.url, {
+      format: "mp4",
+      videoQuality: "720"
+    });
+
+    let caption = `🎥 *Title:* ${vid.title}
+⏳ *Duration:* ${vid.timestamp}
+📊 *Views:* ${vid.views}
+📅 *Uploaded:* ${vid.ago}
+🖊 *Author:* ${vid.author.name}
+🔗 *Link:* ${vid.url}`;
+
+    await conn.sendMessage(from, { video: { url: mp4.dl_url }, caption }, { quoted: mek });
+  } catch (err) {
+    console.error(err);
+    reply("❌ Error downloading video!");
+  }
+});
+//========= song download ============
+
 //============ video download ================
 
 //============= spotify ================
@@ -1998,6 +1966,8 @@ const sentMessage = await messageHandler.sendMessage(from, {
   }
 );
 
+//============= xnxx download ==================
+
 cmd({
   pattern: "xnxx",
   alias: ["xnxxdl", "xnxxdown"],
@@ -2205,7 +2175,7 @@ cmd({
 });
 
 
-// G-Drive-DL
+//============ gdrive download ====================
 
 cmd({
   pattern: "gdrive",
@@ -2250,7 +2220,7 @@ cmd({
   }
 }); 
 
-//=========== mega =============
+//=========== mega download =============
 
 cmd({
     pattern: "mega",
@@ -2469,6 +2439,8 @@ async (conn, mek, m, { from, args, q, reply }) => {
     }
 });
 
+//============ tiktok search ===================
+
 cmd({
   pattern: "tiktoksearch",
   alias: ["tiktoks", "tiks"],
@@ -2527,7 +2499,7 @@ cmd({
   }
 });
 
-//==============
+//============== pinterest download ===============
 
 cmd({
     pattern: "pindl",
@@ -2587,6 +2559,7 @@ ${CREATER}`;
 //===============MOVIE COMMAND=======================
 
 //========== sinhalasub download ===========
+/*
 const API = "https://nethu-api-ashy.vercel.app";
 
 cmd({
@@ -2712,6 +2685,7 @@ ${CREATER}`;
     reply("❌ An error occurred while processing your request.");
   }
 });
+*/
 
 
 //===================OWNER COMMAND======================
