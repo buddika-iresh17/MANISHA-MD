@@ -9,8 +9,7 @@
     "restart": "pm2 restart MANISHA-MD"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "6.6.0",
-    "@dark-yasiya/yt-dl.js": "1.0.5",
+    "@whiskeysockets/baileys": "github:famofc/famofcbaileys",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@xaviabot/fb-downloader": "1.0.14",
     "qrcode-terminal": "^0.12.0",
@@ -40,8 +39,6 @@
     "cheerio": "^1.0.0-rc.12",
     "yt-search":"2.13.1",
     "sequelize": "^6.37.5",
-    "sqlite3": "^5.1.7",
-    "denethdev-ytmp3": "1.0.3",
-    "sadaslk-dlcore": "1.0.0"
+    "sqlite3": "^5.1.7"
   }
 }
