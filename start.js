@@ -1880,7 +1880,7 @@ cmd({
     alias: ["ytmp4", "mp4", "ytv"],
     desc: "Download YouTube videos",
     category: "downloader",
-    react: "📹",
+    react: "🎥",
     filename: __filename
 }, async (conn, mek, m, { from, q, reply }) => {
     try {
@@ -1914,6 +1914,9 @@ cmd({
 
         if (!videoUrl) return await reply("❌ No downloadable video found!");
 
+        // Thumbnail fallback
+        const thumb = media.thumbnail || videoData?.thumbnail;
+
         // Prepare caption
         let desc = `*${BOT} VIDEO DOWNLOADER* 🎥
 
@@ -1922,21 +1925,67 @@ cmd({
 📅 *Uploaded:* ${media.published || videoData?.ago || "Unknown"}
 🎭 *Views:* ${media.views || videoData?.views || "Unknown"}
 
+*Select Download Format:*
+
+*1 ||* Video File  🎥
+*2 ||* Document File  📂
+
 ${CREATER}`;
 
-        // Send video
-        await conn.sendMessage(from, {
-            video: { url: videoUrl },
+        // Send menu with thumbnail
+        const sentMessage = await conn.sendMessage(from, {
+            image: { url: thumb },
             caption: desc
         }, { quoted: mek });
 
-        // Success reaction
-        await conn.sendMessage(from, { react: { text: '✅', key: m.key } });
+        // One-time reply handler
+        const handler = async (update) => {
+            const msg = update.messages[0];
+            if (!msg.message?.extendedTextMessage) return;
+
+            const userReply = msg.message.extendedTextMessage.text.trim();
+
+            // Ensure it's a reply to the bot's menu message in the same chat
+            if (
+                msg.key.remoteJid === from &&
+                msg.message.extendedTextMessage.contextInfo?.stanzaId === sentMessage.key.id
+            ) {
+                // Remove listener after one reply
+                conn.ev.on("messages.upsert", handler);
+
+                await conn.sendMessage(from, { 
+                    react: { text: "⬆️", key: msg.key } 
+                });
+
+                switch (userReply) {
+                    case "1": // Send as video
+                        await conn.sendMessage(from, {
+                            video: { url: videoUrl },
+                            caption: `${CREATER}`
+                        }, { quoted: mek });
+                        break;
+
+                    case "2": // Send as document
+                        await conn.sendMessage(from, {
+                            document: { url: videoUrl },
+                            mimetype: "video/mp4",
+                            fileName: `${media.title || "video"}.mp4`,
+                            caption: `${CREATER}`
+                        }, { quoted: mek });
+                        break;
+
+                    default:
+                        reply("*❌ Invalid Option. Please select 1 or 2.*");
+                        break;
+                }
+            }
+        };
+
+        conn.ev.on("messages.upsert", handler);
 
     } catch (e) {
-        console.error("Error in .video:", e);
-        await reply("❌ Error occurred, try again later!");
-        await conn.sendMessage(from, { react: { text: '❌', key: m.key } });
+        console.error(e);
+        reply(`❌ Error: ${e.message}`);
     }
 });
 //============= spotify ================
