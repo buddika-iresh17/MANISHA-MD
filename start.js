@@ -21,7 +21,7 @@ const {
     jidDecode,
     fetchLatestBaileysVersion,
     Browsers
-  } = require('@whiskeysockets/baileys')
+  } = require('baileys')
   // 📝 Logging
 const l = console.log;
 
@@ -1730,110 +1730,6 @@ cmd({
 
 //========= song download ============
 
-cmd({
-    pattern: "song",
-    alias: ["play", "mp3"],
-    desc: "To download songs.",
-    react: "🎵",
-    category: "download",
-    filename: __filename
-}, async (messageHandler, context, quotedMessage, { from, reply, q }) => {
-  try {
-        q = convertYouTubeLink(q);
-        if (!q) return reply("*Please provide song name or url*");
-
-        const search = await yts(q);
-        const data = search.videos[0];
-        const url = data.url;
-
-        let desc = `*${BOT} SONG DOWNLOADER* 🎧
-        
-🎵 *Title:* ${data.title}
-⏱️ *Duration:* ${data.timestamp}
-📅 *Uploaded:* ${data.ago}
-🎭 *Views:* ${data.views}
-
-*Select Download Format:*`;
-
-        const buttons = [
-            { buttonId: `song_audio_${url}`, buttonText: { displayText: "Audio 🎶" }, type: 1 },
-            { buttonId: `song_doc_${url}`, buttonText: { displayText: "Document 📂" }, type: 1 },
-            { buttonId: `song_ptt_${url}`, buttonText: { displayText: "Voice Note 🎤" }, type: 1 }
-        ];
-
-        const buttonMessage = {
-            image: { url: data.thumbnail },
-            caption: desc,
-            footer: CREATER,
-            buttons: buttons,
-            headerType: 4
-        };
-
-        await messageHandler.sendMessage(from, buttonMessage, { quoted: quotedMessage });
-
-    } catch (e) {
-        console.log(e);
-        reply(`❌ Error: ${e.message}`);
-    }
-});
-
-// Button handler
-messageHandler.ev.on('messages.upsert', async (update) => {
-    const message = update.messages[0];
-    if (!message.message) return;
-
-    const buttonResponse = message.message?.buttonsResponseMessage?.selectedButtonId;
-    if (!buttonResponse) return;
-
-    // button id format: song_audio_url OR song_doc_url OR song_ptt_url
-    const [_, type, url] = buttonResponse.split("_");
-
-    let result, downloadLink;
-    try {
-        await messageHandler.sendMessage(message.key.remoteJid, { react: { text: "⬇️", key: message.key } });
-
-        result = await ytmp3(url, 'mp3');
-        downloadLink = result.downloadUrl;
-
-        switch(type){
-            case 'audio':
-                await messageHandler.sendMessage(message.key.remoteJid, { 
-                    audio: { url: downloadLink }, 
-                    mimetype: "audio/mpeg",
-                    contextInfo: {
-                        externalAdReply: {
-                            title: "Song Download",
-                            body: url,
-                            mediaType: 1,
-                            sourceUrl: url,
-                            renderLargerThumbnail: true
-                        }
-                    }
-                });
-                break;
-            case 'doc':
-                await messageHandler.sendMessage(message.key.remoteJid, {
-                    document: { url: downloadLink },
-                    mimetype: "audio/mp3",
-                    fileName: `Song.mp3`,
-                    caption: `${CREATER}`
-                });
-                break;
-            case 'ptt':
-                await messageHandler.sendMessage(message.key.remoteJid, { 
-                    audio: { url: downloadLink }, 
-                    mimetype: "audio/mpeg",
-                    ptt: true
-                });
-                break;
-        }
-    } catch(e){
-        console.log(e);
-        await messageHandler.sendMessage(message.key.remoteJid, { text: `❌ Error: ${e.message}` });
-    }
-});
-
-/*
 // Function to extract the video ID from youtu.be or YouTube links
 function extractYouTubeId(url) {
     const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
@@ -1976,7 +1872,6 @@ ${CREATER}`;
         reply(`❌ Error: ${e.message}`);
     }
 });
-*/
 //============ video download ================
 
 cmd({
