@@ -1233,6 +1233,73 @@ async function ytmp3(link, format = "mp3") {
     return null;
   }
 }
+//===== VIDEO DOWNLOAD API =============
+async function ytmp4(link, quality = 720, format = "mp4") {
+  try {
+    const pageRes = await axios.get("https://yt.savetube.me", {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127 Safari/537.36",
+      },
+    });
+
+    cheerio.load(pageRes.data);
+
+    // create download task with mp4 + quality
+    const createUrl = `https://loader.to/ajax/download.php?button=1&format=${quality}${format}&url=${encodeURIComponent(
+      link
+    )}`;
+    const createRes = await axios.get(createUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127 Safari/537.36",
+        Referer: "https://yt.savetube.me/",
+      },
+    });
+
+    if (!createRes.data.success || !createRes.data.id) {
+      throw new Error("Failed to create task. Invalid link or format.");
+    }
+
+    const taskId = createRes.data.id;
+
+    let downloadUrl = null;
+    let title = "";
+    let thumbnail = "";
+
+    while (!downloadUrl) {
+      await new Promise((r) => setTimeout(r, 3000));
+
+      const statusUrl = `https://loader.to/ajax/progress.php?id=${taskId}`;
+      const statusRes = await axios.get(statusUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127 Safari/537.36",
+          Referer: "https://yt.savetube.me/",
+        },
+      });
+
+      if (statusRes.data.download_url) {
+        downloadUrl = statusRes.data.download_url;
+        title = statusRes.data.title || "";
+        thumbnail = statusRes.data.thumbnail || "";
+      } else if (statusRes.data.error) {
+        throw new Error("Conversion failed: " + statusRes.data.error);
+      }
+    }
+
+    return {
+      title,
+      Created_by: 'manisha sasmitha',
+      thumbnail,
+      format: `${quality}${format}`,
+      downloadUrl,
+    };
+  } catch (err) {
+    console.error("ytmp4 error:", err.message);
+    return null;
+  }
+}
 
   //===================SESSION-AUTH============================
 
@@ -1875,7 +1942,131 @@ ${CREATER}`;
     }
 });
 //============ video download ================
+// Extract videoId from YouTube URL
+function extractYouTubeId(url) {
+    const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
 
+// Convert any URL to standard watch link
+function convertYouTubeLink(q) {
+    const videoId = extractYouTubeId(q);
+    if (videoId) {
+        return `https://www.youtube.com/watch?v=${videoId}`;
+    }
+    return q;
+}
+
+cmd({
+    pattern: "video",
+    alias: ["mp4", "ytvideo"],
+    desc: "To download YouTube videos.",
+    react: "🎥",
+    category: "download",
+    filename: __filename
+}, async (messageHandler, context, quotedMessage, { from, reply, q }) => {
+  try {
+        q = convertYouTubeLink(q);
+        if (!q) return reply("*Please provide video name or url*");
+        const search = await yts(q);
+        const data = search.videos[0];
+        const url = data.url;
+
+        let desc = `*${BOT} VIDEO DOWNLOADER* 📽️
+        
+🎬 *Title:* ${data.title}
+⏱️ *Duration:* ${data.timestamp}
+📅 *Uploaded:* ${data.ago}
+🎭 *Views:* ${data.views}
+
+*Select Download Option:*
+
+*1 ||* 360p Video 🎞️
+*2 ||* 480p Video 📹
+*3 ||* 720p Video 🎥
+*4 ||* 1080p Video 🎬
+*5 ||* Document File 📂
+
+${CREATER}`;
+
+        // Send video info with thumbnail
+        const sentMessage = await messageHandler.sendMessage(from, {
+            image: { url: data.thumbnail },
+            caption: desc
+        }, { quoted: quotedMessage });
+
+        // Listen for reply
+        messageHandler.ev.on("messages.upsert", async (update) => {
+            const message = update.messages[0];
+            if (!message.message || !message.message.extendedTextMessage) return;
+
+            const userReply = message.message.extendedTextMessage.text.trim();
+
+            if (message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id) {
+                await messageHandler.sendMessage(from, { react: { text: "⬆️", key: message.key } });
+
+                let quality;
+                let asDocument = false;
+
+                switch (userReply) {
+                    case '1': quality = 360; break;
+                    case '2': quality = 480; break;
+                    case '3': quality = 720; break;
+                    case '4': quality = 1080; break;
+                    case '5': quality = 720; asDocument = true; break; // default document at 720p
+                    default: 
+                        reply("*Invalid Option. Please Select A Valid Option*");
+                        return;
+                }
+
+                try {
+                    await messageHandler.sendMessage(from, { react: { text: '⬇️', key: message.key } });
+
+                    const result = await ytmp4(url, quality);
+                    if (!result) return reply("❌ Failed to fetch video.");
+
+                    if (asDocument) {
+                        // Send as document
+                        await messageHandler.sendMessage(from, {
+                            document: { url: result.downloadUrl },
+                            mimetype: "video/mp4",
+                            fileName: `${data.title}.mp4`,
+                            caption: `${CREATER}`
+                        }, { quoted: quotedMessage });
+                    } else {
+                        // Send as normal video
+                        await messageHandler.sendMessage(from, {
+                            video: { url: result.downloadUrl },
+                            mimetype: "video/mp4",
+                            caption: `🎬 *${data.title}*\n📹 ${quality}p Downloaded by ${CREATER}`,
+                            contextInfo: {
+                                externalAdReply: {
+                                    title: data.title,
+                                    body: data.videoId,
+                                    mediaType: 1,
+                                    sourceUrl: data.url,
+                                    thumbnailUrl: data.thumbnail,
+                                    renderLargerThumbnail: true,
+                                    showAdAttribution: false
+                                }
+                            }
+                        }, { quoted: quotedMessage });
+                    }
+
+                    await messageHandler.sendMessage(from, { react: { text: '✅', key: message.key } });
+
+                } catch (err) {
+                    reply(`❌ Error downloading video: ${err.message}`);
+                }
+            }
+        });
+
+    } catch (e) {
+        console.log(e);
+        reply(`❌ Error: ${e.message}`);
+    }
+});
 //============= spotify ================
 cmd({
     pattern: "spotify",
