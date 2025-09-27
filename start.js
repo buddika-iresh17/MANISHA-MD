@@ -1731,6 +1731,7 @@ cmd({
 //===================DOWNLOAD COMMAND======================
 
 //========= song download ============
+
 // Function to extract the video ID from youtu.be or YouTube links
 function extractYouTubeId(url) {
     const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
@@ -1757,7 +1758,8 @@ cmd({
 }, async (messageHandler, context, quotedMessage, { from, reply, q }) => {
   try {
         q = convertYouTubeLink(q);
-        if (!q) return reply("*Please provide song name or utl*");
+        if (!q) return reply("*Please provide song name or url*");
+
         const search = await yts(q);
         const data = search.videos[0];
         const url = data.url;
@@ -1777,102 +1779,101 @@ cmd({
 
 ${CREATER}`;
 
-
         // ℹ️ Send track info
-const sentMessage = await messageHandler.sendMessage(from, {
-      image: { url: data.thumbnail},
-      caption: desc
-    }, { quoted: quotedMessage });
+        const sentMessage = await messageHandler.sendMessage(from, {
+            image: { url: data.thumbnail },
+            caption: desc
+        }, { quoted: quotedMessage });
     
-    // Listen for the user's reply to select the download format
-    messageHandler.ev.on("messages.upsert", async (update) => {
-      const message = update.messages[0];
-      if (!message.message || !message.message.extendedTextMessage) return;
+        // Listen for the user's reply to select the download format
+        messageHandler.ev.on("messages.upsert", async (update) => {
+            const message = update.messages[0];
+            if (!message.message || !message.message.extendedTextMessage) return;
 
-      const userReply = message.message.extendedTextMessage.text.trim();
+            const userReply = message.message.extendedTextMessage.text.trim();
 
-      // Handle the download format choice
-      if (message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id) {
-      // React to the user’s reply message directly
-      await messageHandler.sendMessage(from, { 
-         react: { text: "⬆️", key: message.key } 
+            // Ensure it's a reply to the bot's menu message
+            if (message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id) {
+                
+                await messageHandler.sendMessage(from, { 
+                    react: { text: "⬆️", key: message.key } 
+                });
+
+                let result, downloadLink;
+
+                switch (userReply) {
+                    case '1': 
+                        // Audio File
+                        await messageHandler.sendMessage(from, { react: { text: '⬇️', key: message.key } });
+                        result = await ytmp3(url, 'mp3');
+                        downloadLink = result.downloadUrl;
+
+                        await messageHandler.sendMessage(from, { 
+                            audio: { url: downloadLink }, 
+                            mimetype: "audio/mpeg",
+                            contextInfo: {
+                                externalAdReply: {
+                                    title: data.title,
+                                    body: data.videoId,
+                                    mediaType: 1,
+                                    sourceUrl: data.url,
+                                    thumbnailUrl: data.thumbnail,
+                                    renderLargerThumbnail: true,
+                                    showAdAttribution: false
+                                }
+                            }
+                        }, { quoted: quotedMessage });
+                        break;
+
+                    case '2':
+                        // Document File
+                        await messageHandler.sendMessage(from, { react: { text: '⬇️', key: message.key } });
+                        result = await ytmp3(url, 'mp3');
+                        downloadLink = result.downloadUrl;
+
+                        await messageHandler.sendMessage(from, {
+                            document: { url: downloadLink },
+                            mimetype: "audio/mp3",
+                            fileName: `${data.title}.mp3`,
+                            caption: `${CREATER}`
+                        }, { quoted: quotedMessage });
+                        break;
+
+                    case '3':
+                        // Voice Note
+                        await messageHandler.sendMessage(from, { react: { text: '⬇️', key: message.key } });
+                        result = await ytmp3(url, 'mp3');
+                        downloadLink = result.downloadUrl;
+
+                        await messageHandler.sendMessage(from, { 
+                            audio: { url: downloadLink }, 
+                            mimetype: "audio/mpeg",
+                            ptt: true,
+                            contextInfo: {
+                                externalAdReply: {
+                                    title: data.title,
+                                    body: data.videoId,
+                                    mediaType: 1,
+                                    sourceUrl: data.url,
+                                    thumbnailUrl: data.thumbnail,
+                                    renderLargerThumbnail: true,
+                                    showAdAttribution: false
+                                }
+                            }
+                        }, { quoted: quotedMessage });
+                        break;
+
+                    default:
+                        reply("*Invalid Option. Please Select A Valid Option*");
+                        break;
+                }
+            }
         });
-        switch (userReply) {
-          case '1': 
-           // Handle option 1 (Audio File)
-                    await messageHandler.sendMessage(from, { react: { text: '⬇️', key: msg.key } });
-                const result = await ytmp3(url, 'mp3');
-        const downloadLink = result.downloadUrl;
-                await messageHandler.sendMessage(from, { react: { text: '⬆️', key: msg.key } });  
-                    await messageHandler.sendMessage(from, { 
-                        audio: { url: downloadLink }, 
-                        mimetype: "audio/mpeg" ,
-                        contextInfo: {
-                            externalAdReply: {
-                                title: data.title,
-                                body: data.videoId,
-                                mediaType: 1,
-                                sourceUrl: data.url,
-                                thumbnailUrl: data.thumbnail, // This should match the image URL provided above
-                                renderLargerThumbnail: true,
-                                showAdAttribution: false
-                            }
-                        }
-                    
-                    }, { quoted: quotedMessage });
-                    
-            break;
-          case '2': 
-            // Handle option 2 (Document File)
-                    await messageHandler.sendMessage(from, { react: { text: '⬇️', key: msg.key } });
-                    const result = await ytmp3(url, 'mp3');
-        const downloadLink = result.downloadUrl;
-                await messageHandler.sendMessage(from, { react: { text: '⬆️', key: msg.key } });
-                    await messageHandler.sendMessage(from, {
-                        document: { url: downloadLink},
-                        mimetype: "audio/mp3",
-                        fileName: `${data.title}.mp3`, // Ensure `img.allmenu` is a valid image URL or base64 encoded image
-                        caption: `${CREATER}`
-                                            
-                      }, { quoted: quotedMessage });
-                      
-            break;
-         case '3':
-                     await messageHandler.sendMessage(from, { react: { text: '⬇️', key: msg.key } });
-                    const result = await ytmp3(url, 'mp3');
-        const downloadLink = result.downloadUrl;
-                await messageHandler.sendMessage(from, { react: { text: '⬆️', key: msg.key } });  
-                    await messageHandler.sendMessage(from, { 
-                        audio: { url: downloadLink }, 
-                        mimetype: "audio/mpeg" ,
-                        ptt: "true" ,
-                        contextInfo: {
-                            externalAdReply: {
-                                title: data.title,
-                                body: data.videoId,
-                                mediaType: 1,
-                                sourceUrl: data.url,
-                                thumbnailUrl: data.thumbnail, // This should match the image URL provided above
-                                renderLargerThumbnail: true,
-                                showAdAttribution: false
-                            }
-                        }
-                    
-                    }, { quoted: quotedMessage });
-         
-            break;
-          default:
-            reply("*Invalid Option. Please Select A Valid Option*");
-            break;
-        }
-      }
-    });
     } catch (e) {
-      console.log(e);
-      reply(`❌ Error: ${e.message}`);
+        console.log(e);
+        reply(`❌ Error: ${e.message}`);
     }
-  }
-);
+});
 //============ video download ================
 
 //============= spotify ================
