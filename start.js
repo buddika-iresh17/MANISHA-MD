@@ -1161,6 +1161,79 @@ async function gifToVideo(gifBuffer) {
     return videoBuffer;
 }
 
+
+//============== SONG DOWNLOAD API ===============
+async function ytmp3(link, format = "mp3") {
+  try {
+    // 1. Access yt.savetube.me to get initial page (optional if you want to parse hidden values)
+    const pageRes = await axios.get("https://yt.savetube.me", {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127 Safari/537.36",
+      },
+    });
+
+    // Load the HTML if you want to scrape tokens/keys (in case they use CSRF or hidden params)
+    const $ = cheerio.load(pageRes.data);
+
+    // 2. Create a conversion task
+    const createUrl = `https://loader.to/ajax/download.php?button=1&format=${format}&url=${encodeURIComponent(
+      link
+    )}`;
+    const createRes = await axios.get(createUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127 Safari/537.36",
+        Referer: "https://yt.savetube.me/",
+      },
+    });
+
+    if (!createRes.data.success || !createRes.data.id) {
+      throw new Error("Failed to create task. Invalid link or format.");
+    }
+
+    const taskId = createRes.data.id;
+
+    // 3. Poll progress until the download link is ready
+    let downloadUrl = null;
+    let title = "";
+    let thumbnail = "";
+
+    while (!downloadUrl) {
+      await new Promise((r) => setTimeout(r, 3000)); // wait 3s between polls
+
+      const statusUrl = `https://loader.to/ajax/progress.php?id=${taskId}`;
+      const statusRes = await axios.get(statusUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127 Safari/537.36",
+          Referer: "https://yt.savetube.me/",
+        },
+      });
+
+      if (statusRes.data.download_url) {
+        downloadUrl = statusRes.data.download_url;
+        title = statusRes.data.title || "";
+        thumbnail = statusRes.data.thumbnail || "";
+      } else if (statusRes.data.error) {
+        throw new Error("Conversion failed: " + statusRes.data.error);
+      }
+    }
+
+    // 4. Return structured result
+    return {
+      title,
+      Created_by: 'manisha sasmitha',
+      thumbnail,
+      format,
+      downloadUrl: downloadUrl,
+    };
+  } catch (err) {
+    console.error("ytmp3 error:", err.message);
+    return null;
+  }
+}
+
   //===================SESSION-AUTH============================
 
 const sessionFile = path.join(__dirname, 'creds');
@@ -1656,80 +1729,150 @@ cmd({
   }
 });
 //===================DOWNLOAD COMMAND======================
-const { ytmp3, ytmp4 } = require("sadaslk-dlcore");
 
-// 🎵 SONG DOWNLOAD (MP3)
-cmd({
-  pattern: "song",
-  alias: ["mp3"],
-  react: "🎵",
-  desc: "Download YouTube Song as MP3",
-  category: "download",
-  use: "<song name or YouTube link>",
-  filename: __filename,
-}, async (conn, m, mek, { from, reply, q }) => {
-  try {
-    if (!q) return reply("🔎 Please provide a song name or YouTube link.");
-
-    let search = await yts(q);
-    let vid = search.videos[0];
-    if (!vid) return reply("⚠️ No song found!");
-
-    let mp3 = await ytmp3(vid.url);
-
-    let caption = `🎵 *Title:* ${vid.title}
-⏳ *Duration:* ${vid.timestamp}
-📊 *Views:* ${vid.views}
-📅 *Uploaded:* ${vid.ago}
-🖊 *Author:* ${vid.author.name}
-🔗 *Link:* ${vid.url}`;
-
-    await conn.sendMessage(from, { audio: { url: mp3.dl_url }, mimetype: "audio/mpeg", ptt: false }, { quoted: mek });
-    reply(caption);
-  } catch (err) {
-    console.error(err);
-    reply("❌ Error downloading song!");
-  }
-});
-
-
-// 🎥 VIDEO DOWNLOAD (MP4)
-cmd({
-  pattern: "video",
-  alias: ["mp4"],
-  react: "🎥",
-  desc: "Download YouTube Video as MP4",
-  category: "download",
-  use: "<video name or YouTube link>",
-  filename: __filename,
-}, async (conn, m, mek, { from, reply, q }) => {
-  try {
-    if (!q) return reply("🔎 Please provide a video name or YouTube link.");
-
-    let search = await yts(q);
-    let vid = search.videos[0];
-    if (!vid) return reply("⚠️ No video found!");
-
-    let mp4 = await ytmp4(vid.url, {
-      format: "mp4",
-      videoQuality: "720"
-    });
-
-    let caption = `🎥 *Title:* ${vid.title}
-⏳ *Duration:* ${vid.timestamp}
-📊 *Views:* ${vid.views}
-📅 *Uploaded:* ${vid.ago}
-🖊 *Author:* ${vid.author.name}
-🔗 *Link:* ${vid.url}`;
-
-    await conn.sendMessage(from, { video: { url: mp4.dl_url }, caption }, { quoted: mek });
-  } catch (err) {
-    console.error(err);
-    reply("❌ Error downloading video!");
-  }
-});
 //========= song download ============
+// Function to extract the video ID from youtu.be or YouTube links
+function extractYouTubeId(url) {
+    const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
 
+// Function to convert any YouTube URL to a full YouTube watch URL
+function convertYouTubeLink(q) {
+    const videoId = extractYouTubeId(q);
+    if (videoId) {
+        return `https://www.youtube.com/watch?v=${videoId}`;
+    }
+    return q;
+}
+
+cmd({
+    pattern: "song",
+    alias: ["play", "mp3"],
+    desc: "To download songs.",
+    react: "🎵",
+    category: "download",
+    filename: __filename
+}, async (messageHandler, context, quotedMessage, { from, reply, q }) => {
+  try {
+        q = convertYouTubeLink(q);
+        if (!q) return reply("*Please provide song name or utl*");
+        const search = await yts(q);
+        const data = search.videos[0];
+        const url = data.url;
+
+        let desc = `*${BOT} SONG DOWNLOADER* 🎧
+        
+🎵 *Title:* ${data.title}
+⏱️ *Duration:* ${data.timestamp}
+📅 *Uploaded:* ${data.ago}
+🎭 *Views:* ${data.views}
+
+*Select Download Format:*
+
+*1 ||* Audio File  🎶
+*2 ||* Document File  📂
+*3 ||* Voice Note 🎤
+
+${CREATER}`;
+
+
+        // ℹ️ Send track info
+const sentMessage = await messageHandler.sendMessage(from, {
+      image: { url: data.thumbnail},
+      caption: desc
+    }, { quoted: quotedMessage });
+    
+    // Listen for the user's reply to select the download format
+    messageHandler.ev.on("messages.upsert", async (update) => {
+      const message = update.messages[0];
+      if (!message.message || !message.message.extendedTextMessage) return;
+
+      const userReply = message.message.extendedTextMessage.text.trim();
+
+      // Handle the download format choice
+      if (message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id) {
+      // React to the user’s reply message directly
+      await messageHandler.sendMessage(from, { 
+         react: { text: "⬆️", key: message.key } 
+        });
+        switch (userReply) {
+          case '1': 
+           // Handle option 1 (Audio File)
+                    await messageHandler.sendMessage(from, { react: { text: '⬇️', key: msg.key } });
+                const result = await ytmp3(url, 'mp3');
+        const downloadLink = result.downloadUrl;
+                await messageHandler.sendMessage(from, { react: { text: '⬆️', key: msg.key } });  
+                    await messageHandler.sendMessage(from, { 
+                        audio: { url: downloadLink }, 
+                        mimetype: "audio/mpeg" ,
+                        contextInfo: {
+                            externalAdReply: {
+                                title: data.title,
+                                body: data.videoId,
+                                mediaType: 1,
+                                sourceUrl: data.url,
+                                thumbnailUrl: data.thumbnail, // This should match the image URL provided above
+                                renderLargerThumbnail: true,
+                                showAdAttribution: false
+                            }
+                        }
+                    
+                    }, { quoted: quotedMessage });
+                    
+            break;
+          case '2': 
+            // Handle option 2 (Document File)
+                    await messageHandler.sendMessage(from, { react: { text: '⬇️', key: msg.key } });
+                    const result = await ytmp3(url, 'mp3');
+        const downloadLink = result.downloadUrl;
+                await messageHandler.sendMessage(from, { react: { text: '⬆️', key: msg.key } });
+                    await messageHandler.sendMessage(from, {
+                        document: { url: downloadLink},
+                        mimetype: "audio/mp3",
+                        fileName: `${data.title}.mp3`, // Ensure `img.allmenu` is a valid image URL or base64 encoded image
+                        caption: `${CREATER}`
+                                            
+                      }, { quoted: quotedMessage });
+                      
+            break;
+         case '3':
+                     await messageHandler.sendMessage(from, { react: { text: '⬇️', key: msg.key } });
+                    const result = await ytmp3(url, 'mp3');
+        const downloadLink = result.downloadUrl;
+                await messageHandler.sendMessage(from, { react: { text: '⬆️', key: msg.key } });  
+                    await messageHandler.sendMessage(from, { 
+                        audio: { url: downloadLink }, 
+                        mimetype: "audio/mpeg" ,
+                        ptt: "true" ,
+                        contextInfo: {
+                            externalAdReply: {
+                                title: data.title,
+                                body: data.videoId,
+                                mediaType: 1,
+                                sourceUrl: data.url,
+                                thumbnailUrl: data.thumbnail, // This should match the image URL provided above
+                                renderLargerThumbnail: true,
+                                showAdAttribution: false
+                            }
+                        }
+                    
+                    }, { quoted: quotedMessage });
+         
+            break;
+          default:
+            reply("*Invalid Option. Please Select A Valid Option*");
+            break;
+        }
+      }
+    });
+    } catch (e) {
+      console.log(e);
+      reply(`❌ Error: ${e.message}`);
+    }
+  }
+);
 //============ video download ================
 
 //============= spotify ================
