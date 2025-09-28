@@ -2522,48 +2522,61 @@ async (conn, mek, m, { from, q, reply }) => {
 
 cmd({
   pattern: "mediafire",
-  react: "📁",
-  alias: ["mf", "mfire"],
-  desc: "Download files from MediaFire",
+  alias: ["mfire"],
+  desc: "Download Mediafire files",
   category: "download",
-  use: "<mediafire link>",
+  react: '📩',
   filename: __filename
-},
-async (conn, mek, m, { from, q, reply }) => {
+}, async (conn, message, mek, {
+  from, quoted, body, isCmd, command, args, q, reply
+}) => {
   try {
-    if (!q) return reply("⚠️ Please provide a valid MediaFire link.\n\nExample: .mediafire https://www.mediafire.com/file/xxxx/file");
+    if (!q || !q.startsWith("https://")) {
+      return reply("*Please provide a valid Mediafire URL.* ❗");
+    }
 
-    // API endpoint
-    let api = `https://delirius-apiofc.vercel.app/download/mediafire?url=${encodeURIComponent(q)}`;
+    const response = await fetch(q);
+    const text = await response.text();
+    const $ = cheerio.load(text);
 
-    // Fetch API response
-    let res = await fetch(api);
-    if (!res.ok) throw new Error(`❌ MediaFire API Error: ${res.status}`);
-    let json = await res.json();
+    const fileName = $(".dl-info > div > div.filename").text().trim();
+    const downloadUrl = $("#downloadButton").attr("href");
+    const fileType = $(".dl-info > div > div.filetype").text().trim();
+    const fileSize = $("body > main > div.content > div.center > div > div.dl-info > ul > li:nth-child(1) > span").text().trim();
+    const fileDate = $("body > main > div.content > div.center > div > div.dl-info > ul > li:nth-child(2) > span").text().trim();
 
-    if (!json.status) return reply("❌ Invalid MediaFire link or file not found!");
+    if (!fileName || !downloadUrl) {
+      return reply("⚠️ Failed to extract Mediafire download information. Please try a different link.");
+    }
 
-    let data = json.data[0];
-    let caption = `📂 *MediaFire Downloader*
-    
-📝 *Filename:* ${data.filename}
-📏 *Size:* ${data.size}
-🗂️ *Extension:* ${data.extension}
-📑 *Mime:* ${data.mime}
-⏳ *Uploaded:* ${data.uploaded}
-🔗 *Link:* ${data.link}`;
+    let mimeType = "application/octet-stream"; // default fallback
+    const ext = fileName.split(".").pop().toLowerCase();
 
-    // Send file with caption
+    const mimeTypes = {
+      zip: "application/zip",
+      pdf: "application/pdf",
+      mp4: "video/mp4",
+      mkv: "video/x-matroska",
+      mp3: "audio/mpeg",
+      "7z": "application/x-7z-compressed",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      png: "image/png",
+      rar: "application/x-rar-compressed"
+    };
+
+    if (mimeTypes[ext]) mimeType = mimeTypes[ext];
+
     await conn.sendMessage(from, {
-      document: { url: data.link },
-      fileName: data.filename,
-      mimetype: data.mime,
-      caption
+      document: { url: downloadUrl },
+      fileName: fileName,
+      mimetype: mimeType,
+      caption: `📄 *${fileName}*\n\n📁 Type: ${fileType}\n📦 Size: ${fileSize}\n📅 Uploaded: ${fileDate}`
     }, { quoted: mek });
 
-  } catch (e) {
-    console.error(e);
-    reply("❌ Error while downloading the MediaFire file.");
+  } catch (error) {
+    console.error(error);
+    reply("❌ Error while processing the Mediafire link.");
   }
 });
 //============= fb download ==============
@@ -6146,64 +6159,6 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
-
-
-cmd({
-  pattern: "img2url",
-  react: "⏭️",
-  alias: ["img2url"],
-  desc: "Uploads replied image to ImgBB",
-  use: ".imgbb <reply to an image>",
-  category: "convert",
-  filename: __filename
-}, async (conn, mek, m, { from, quoted, reply }) => {
-  let tempFilePath = "";
-  try {
-    await conn.sendMessage(from, { react: { text: '📎', key: mek.key } });
-
-    // Check if the replied message exists and is an image
-    if (!quoted || !quoted.msg || !quoted.download || quoted.type !== "image") {
-      return reply("❌ Please reply to a valid image to upload it to ImgBB.");
-    }
-
-    // Generate a temporary file path
-    const tempFileName = `${BOT}\n${Crypto.randomBytes(8).toString("hex")}.jpg`;
-    tempFilePath = path.join(__dirname, tempFileName);
-
-    // Download the image
-    const mediaBuffer = await quoted.download();
-    if (!mediaBuffer) return reply("❌ Failed to download the image. Please try again.");
-
-    // Save image locally
-    fs.writeFileSync(tempFilePath, mediaBuffer);
-
-    // Prepare form data for ImgBB
-    const apiKey = "a0669ccae966e3f7cfe5122eb7194b4a";
-    const formData = new FormData();
-    formData.append("image", fs.createReadStream(tempFilePath));
-
-    // Upload image
-    const response = await axios.post(`https://api.imgbb.com/1/upload?key=${apiKey}`, formData, {
-      headers: formData.getHeaders()
-    });
-
-    // Delete temp file
-    fs.unlinkSync(tempFilePath);
-
-    // Send response
-    if (response.data && response.data.success) {
-      const imageUrl = response.data.data.url;
-      reply(`✅ Image uploaded successfully!\n🌐 URL: ${imageUrl}`);
-    } else {
-      reply("❌ Failed to upload the image to ImgBB. Please try again.");
-    }
-
-  } catch (error) {
-    console.error("Error uploading image to ImgBB:", error);
-    if (tempFilePath && fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
-    reply("❌ An error occurred while uploading the image.");
-  }
-});
 //=====================
 
 cmd({
