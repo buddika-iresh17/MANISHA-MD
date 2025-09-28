@@ -80,6 +80,8 @@ const { File } = require('megajs');
 const mime = require('mime-types');
 
 
+const { sizeFormatter } = require("human-readable");
+
 // ⚙️ Configs and Others
 const config = require('./config');
 
@@ -2432,48 +2434,69 @@ cmd({
 
 //============ gdrive download ====================
 
+async function GDriveDl(url) {
+  let id;
+  if (!(url && url.match(/drive\.google/i))) return { error: true };
+  try {
+    id = (url.match(/[-\w]{25,}/) || [null])[0];
+    if (!id) return { error: true };
+
+    const res = await fetch(`https://drive.google.com/uc?id=${id}&authuser=0&export=download`);
+    const html = await res.text();
+
+    if (html.includes("Google Drive - Quota exceeded")) {
+      return { error: true, message: "Download quota exceeded. Try again later." };
+    }
+
+    const $ = cheerio.load(html);
+    const fileName = $("title").text().replace(" - Google Drive", "").trim();
+    const downloadUrl = `https://drive.google.com/uc?export=download&id=${id}`;
+    let fileSize = $("span.uc-name-size").text().replace(fileName, "").trim();
+
+    if (!fileSize) fileSize = "Unknown";
+
+    return {
+      fileName,
+      downloadUrl,
+      fileSize
+    };
+  } catch (e) {
+    return { error: true, message: e.message };
+  }
+}
+
 cmd({
   pattern: "gdrive",
-  desc: "Download Google Drive files.",
-  react: "🌐",
+  alias: ["googledrive", "gdrivedl"],
+  desc: "Download Google Drive files",
   category: "download",
+  react: '📂',
   filename: __filename
-}, async (conn, m, store, {
-  from,
-  quoted,
-  q,
-  reply
+}, async (conn, message, mek, {
+  from, q, reply
 }) => {
   try {
-    if (!q) {
-      return reply("❌ Please provide a valid Google Drive link.");
+    if (!q || !q.startsWith("http")) {
+      return reply("*Please provide a valid Google Drive URL.* ❗");
     }
 
-    await conn.sendMessage(from, { react: { text: "⬇️", key: m.key } });
-
-    const apiUrl = `https://api.fgmods.xyz/api/downloader/gdrive?url=${q}&apikey=mnp3grlZ`;
-    const response = await axios.get(apiUrl);
-    const downloadUrl = response.data.result.downloadUrl;
-
-    if (downloadUrl) {
-      await conn.sendMessage(from, { react: { text: "⬆️", key: m.key } });
-
-      await conn.sendMessage(from, {
-        document: { url: downloadUrl },
-        mimetype: response.data.result.mimetype,
-        fileName: response.data.result.fileName,
-        caption: `${CREATER}`
-      }, { quoted: m });
-
-      await conn.sendMessage(from, { react: { text: "✅", key: m.key } });
-    } else {
-      return reply("⚠️ No download URL found. Please check the link and try again.");
+    const file = await GDriveDl(q);
+    if (file.error) {
+      return reply("⚠️ Failed to fetch Google Drive file. " + (file.message || ""));
     }
-  } catch (error) {
-    console.error("Error:", error);
-    reply("❌ An error occurred while fetching the Google Drive file. Please try again.");
+
+    await conn.sendMessage(from, {
+      document: { url: file.downloadUrl },
+      fileName: file.fileName,
+      mimetype: "application/octet-stream",
+      caption: `📄 *${file.fileName}*\n📦 Size: ${file.fileSize}`
+    }, { quoted: mek });
+
+  } catch (err) {
+    console.error(err);
+    reply("❌ Error while processing Google Drive link.");
   }
-}); 
+});
 
 //=========== mega download =============
 
