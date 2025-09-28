@@ -39,7 +39,6 @@
     "cheerio": "^1.0.0-rc.12",
     "yt-search":"2.13.1",
     "sequelize": "^6.37.5",
-    "sqlite3": "^5.1.7",
-    "human-readable": "latest"
+    "sqlite3": "^5.1.7"
   }
 }

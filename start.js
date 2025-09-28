@@ -80,8 +80,6 @@ const { File } = require('megajs');
 const mime = require('mime-types');
 
 
-const { sizeFormatter } = require("human-readable");
-
 // ⚙️ Configs and Others
 const config = require('./config');
 
@@ -2434,6 +2432,7 @@ cmd({
 
 //============ gdrive download ====================
 
+// Function to extract GDrive info
 async function GDriveDl(url) {
   let id;
   if (!(url && url.match(/drive\.google/i))) return { error: true };
@@ -2445,21 +2444,15 @@ async function GDriveDl(url) {
     const html = await res.text();
 
     if (html.includes("Google Drive - Quota exceeded")) {
-      return { error: true, message: "Download quota exceeded. Try again later." };
+      return { error: true, message: "⚠️ Download quota exceeded. Try again later." };
     }
 
     const $ = cheerio.load(html);
-    const fileName = $("title").text().replace(" - Google Drive", "").trim();
+    const fileName = $("title").text().replace(" - Google Drive", "").trim() || "Unknown";
+    const fileSize = $("span.uc-name-size").text().replace(fileName, "").trim() || "Unknown";
     const downloadUrl = `https://drive.google.com/uc?export=download&id=${id}`;
-    let fileSize = $("span.uc-name-size").text().replace(fileName, "").trim();
 
-    if (!fileSize) fileSize = "Unknown";
-
-    return {
-      fileName,
-      downloadUrl,
-      fileSize
-    };
+    return { fileName, fileSize, downloadUrl };
   } catch (e) {
     return { error: true, message: e.message };
   }
@@ -2472,9 +2465,7 @@ cmd({
   category: "download",
   react: '📂',
   filename: __filename
-}, async (conn, message, mek, {
-  from, q, reply
-}) => {
+}, async (conn, message, mek, { from, q, reply }) => {
   try {
     if (!q || !q.startsWith("http")) {
       return reply("*Please provide a valid Google Drive URL.* ❗");
@@ -2482,9 +2473,25 @@ cmd({
 
     const file = await GDriveDl(q);
     if (file.error) {
-      return reply("⚠️ Failed to fetch Google Drive file. " + (file.message || ""));
+      return reply("❌ Failed: " + (file.message || "Could not fetch file info."));
     }
 
+    // Convert file size string to MB number if possible
+    let sizeMB = 0;
+    if (file.fileSize && file.fileSize.includes("MB")) {
+      sizeMB = parseFloat(file.fileSize.replace("MB", "").trim());
+    } else if (file.fileSize && file.fileSize.includes("GB")) {
+      sizeMB = parseFloat(file.fileSize.replace("GB", "").trim()) * 1024;
+    }
+
+    // If file is too big, send only link
+    if (sizeMB > 1900) { // over ~2GB
+      return reply(
+        `📄 *${file.fileName}*\n📦 Size: ${file.fileSize}\n\n⚠️ File too large for WhatsApp. Download manually:\n${file.downloadUrl}`
+      );
+    }
+
+    // Otherwise, try sending as document
     await conn.sendMessage(from, {
       document: { url: file.downloadUrl },
       fileName: file.fileName,
