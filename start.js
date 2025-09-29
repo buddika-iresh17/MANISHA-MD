@@ -2857,20 +2857,28 @@ ${CREATER}`;
 //===============MOVIE COMMAND=======================
 
 //========== sinhalasub download ===========
+
+// Global session object to store search results for reply handling
 let searchSessions = {};
 
+/*
+📑 SinhalaSub Plugin
+Commands:
+1️⃣ sinhalasub <movie> → search movies
+2️⃣ reply with number → auto download corresponding movie
+*/
 
 cmd({
     pattern: "sinhalasub",
     react: '📑',
-    category: "movie",
+    category: "search",
     desc: "Search movies from SinhalaSub",
     filename: __filename
-}, async (conn, m, mek, { from, q, isDev, reply }) => {
+}, async (conn, m, mek, { from, q, reply }) => {
     if (!q) return await reply('*Please enter a movie name!*');
 
     try {
-        const url = `https://sinhalasub.lk/?s=${q}`;
+        const url = `https://sinhalasub.lk/?s=${encodeURIComponent(q)}`;
         const response = await axios.get(url);
         const $ = cheerio.load(response.data);
 
@@ -2888,7 +2896,7 @@ cmd({
 
         if (data.length < 1) return await conn.sendMessage(from, { text: '❌ No results found!' }, { quoted: mek });
 
-        // Store search results for this chat
+        // Store search results
         searchSessions[from] = data;
 
         let textw = `🎬 *SinhalaSub Search Results*\n\n🔎 Keyword: ${q}\n\n`;
@@ -2911,7 +2919,7 @@ cmd({
 
             const userReply = message.message.extendedTextMessage.text.trim();
 
-            // Ensure it's a reply to our sent message
+            // Check if reply is to our sent message
             if (message.message.extendedTextMessage.contextInfo?.stanzaId === sentMessage.key.id) {
                 const index = parseInt(userReply) - 1;
                 if (isNaN(index) || index < 0 || index >= data.length) return;
@@ -2933,27 +2941,27 @@ async function subinHandler(conn, mek, movieLink, from) {
         const response = await axios.get(movieLink);
         const $ = cheerio.load(response.data);
 
-        const newsArticle = $(".sheader").first();
-        const title = newsArticle.find(".data .head h1").text();
-        const date = newsArticle.find(".extra .date").text().trim();
-        const duration = newsArticle.find(".extra .runtime").text().trim();
+        // Movie Info
+        const title = $(".sheader .data .head h1").text().trim();
+        const date = $(".sheader .extra .date").text().trim();
+        const duration = $(".sheader .extra .runtime").text().trim();
         const desc = $("#info .wp-content p").text().trim();
-        const rating = $("#info #repimdb strong").text().trim();
-        const img = $("#info #dt_galery .owl-item a").attr("src");
+        const rating = $("#repimdb strong").text().trim();
+        const img = $("#dt_galery .owl-item a").attr("href") || $(".poster img").attr("src");
 
-        // Collect download links
+        // Download Links
         let download_links = [];
-        $("#download > div > div > table > tbody > tr").each((i, el) => {
-            download_links.push({
-                quality: $(el).find("td > strong").text(),
-                size: $(el).find("td").eq(2).text(),
-                link: $(el).find("td > a").attr("href"),
-            });
+        $("#download table tbody tr").each((i, el) => {
+            const tds = $(el).find("td");
+            const quality = $(tds[0]).text().trim();
+            const size = $(tds[1]).text().trim();
+            const link = $(tds[2]).find("a").attr("href");
+            if (link) download_links.push({ quality, size, link });
         });
 
         if (download_links.length < 1) return conn.sendMessage(from, { text: "❌ No download links found!" }, { quoted: mek });
 
-        // Pixeldrain API link converter
+        // Pixeldrain API converter
         const getPixeldrainAPI = async (link) => {
             try {
                 const res = await axios.get(link);
@@ -2962,8 +2970,7 @@ async function subinHandler(conn, mek, movieLink, from) {
                 if (!pageLink) return null;
                 const id = pageLink.split("https://pixeldrain.com/u/")[1];
                 return id ? `https://pixeldrain.com/api/file/${id}` : null;
-            } catch (err) {
-                console.log('Pixeldrain fetch error:', err);
+            } catch {
                 return null;
             }
         };
@@ -2978,33 +2985,33 @@ async function subinHandler(conn, mek, movieLink, from) {
             }
         }
 
-        if (!downloadURL) return conn.sendMessage(from, { text: "❌ No downloadable links found!" }, { quoted: mek });
+        if (!downloadURL) return conn.sendMessage(from, { text: "❌ Could not resolve Pixeldrain link!" }, { quoted: mek });
 
-        // Send movie info + image
+        // Send movie info
         let msgInfo = `🎬 *${title}*\n\n`;
         msgInfo += `📅 Year: ${date}\n`;
         msgInfo += `⏳ Duration: ${duration}\n`;
-        msgInfo += `💫 Rating: ${rating}\n`;
-        msgInfo += `📝 Description: ${desc}\n\n`;
+        msgInfo += `💫 Rating: ${rating}\n\n`;
+        msgInfo += `📝 ${desc}\n\n`;
         msgInfo += `📥 Downloading movie...`;
 
         await conn.sendMessage(from, { image: { url: img }, caption: msgInfo }, { quoted: mek });
 
-        // Download and send the movie
+        // Download + Send
         const responseFile = await axios.get(downloadURL, { responseType: 'arraybuffer' });
         const mediaBuffer = Buffer.from(responseFile.data, 'binary');
 
-        const docMsg = {
+        await conn.sendMessage(from, {
             document: mediaBuffer,
             caption: `🎬 *${title}*`,
             mimetype: "video/mp4",
             fileName: `${title}.mp4`,
-        };
-        await conn.sendMessage(from, docMsg, { quoted: mek });
+        }, { quoted: mek });
+
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
 
     } catch (e) {
-        console.log(e);
+        console.log("SinhalaSub error:", e);
         await conn.sendMessage(from, { text: '*❌ Error fetching or sending movie!*' }, { quoted: mek });
     }
 }
