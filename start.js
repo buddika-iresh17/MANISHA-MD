@@ -2857,134 +2857,157 @@ ${CREATER}`;
 //===============MOVIE COMMAND=======================
 
 //========== sinhalasub download ===========
-/*
-const API = "https://nethu-api-ashy.vercel.app";
+let searchSessions = {};
+
 
 cmd({
-  pattern: "sinhalasub",
-  react: "🎬",
-  alias: ["sub"],
-  desc: "SinhalaSub Search & Download",
-  category: "movie",
-  filename: __filename
-}, async (conn, mek, m, { from, q, reply }) => {
-  if (!q) return reply("🎬 *Please provide a movie name*");
+    pattern: "sinhalasub",
+    react: '📑',
+    category: "movie",
+    desc: "Search movies from SinhalaSub",
+    filename: __filename
+}, async (conn, m, mek, { from, q, isDev, reply }) => {
+    if (!q) return await reply('*Please enter a movie name!*');
 
-  try {
-    const res = await axios.get(`${API}/movie/sinhalasub/search?text=${encodeURIComponent(q)}`);
-    const list = res?.data?.result?.data || [];
+    try {
+        const url = `https://sinhalasub.lk/?s=${q}`;
+        const response = await axios.get(url);
+        const $ = cheerio.load(response.data);
 
-    if (!list.length) return reply("❌ No results found!");
+        const data = $(".search-page .result-item article")
+            .map((i, el) => ({
+                No: i + 1,
+                Title: $(el).find(".details .title a").text().trim(),
+                Desc: $(el).find('.details .contenido p').text().trim(),
+                Img: $(el).find('.image img').attr("src"),
+                Type: $(el).find('.image span').text().trim(),
+                Link: $(el).find(".details .title a").attr("href"),
+                Year: $(el).find('.details span .rating').text().trim(),
+                Rating: $(el).find('.details span').text().trim(),
+            })).get();
 
-    const movies = list.map((m, i) => ({ number: i + 1, title: m.title, link: m.link }));
+        if (data.length < 1) return await conn.sendMessage(from, { text: '❌ No results found!' }, { quoted: mek });
 
-    let text = `*🎬 SINHALASUB SEARCH RESULTS*\n\n`;
-    movies.forEach(m => text += `*${m.number}* ➜ ${m.title}\n`);
-    text += `\n🔢 Select a movie: Reply with the number\n${CREATER}`;
+        // Store search results for this chat
+        searchSessions[from] = data;
 
-    const sentList = await conn.sendMessage(from, { text }, { quoted: mek });
-    await conn.sendMessage(from, { react: { text: "🎥", key: sentList.key } });
-    const key = sentList.key;
+        let textw = `🎬 *SinhalaSub Search Results*\n\n🔎 Keyword: ${q}\n\n`;
+        for (let i = 0; i < data.length; i++) {
+            textw += `*⛓️ No:* ${data[i].No}\n`;
+            textw += `*📃 Title:* ${data[i].Title}\n`;
+            textw += `*📚 Category:* ${data[i].Type}\n`;
+            textw += `*💫 Rating:* ${data[i].Rating}\n`;
+            textw += `*📅 Date:* ${data[i].Year}\n`;
+            textw += `--------------------------------------------\n`;
+        }
+        textw += `\n➡️ Reply with the number of the movie to download!`;
 
-    const downloadMap = new Map();
+        const sentMessage = await conn.sendMessage(from, { image: { url: data[0].Img }, caption: textw }, { quoted: mek });
 
-    const handler = async (update) => {
-      const message = update.messages[0];
-      if (!message.message?.extendedTextMessage) return;
+        // Listen for reply
+        conn.ev.on("messages.upsert", async (update) => {
+            const message = update.messages[0];
+            if (!message.message || !message.message.extendedTextMessage) return;
 
-      const txt = message.message.extendedTextMessage.text.trim();
-      const replyId = message.message.extendedTextMessage.contextInfo.stanzaId;
+            const userReply = message.message.extendedTextMessage.text.trim();
 
-      if (replyId === key.id) {
-        await conn.sendMessage(from, { react: { text: "🎥", key: message.key } });
-        const idx = parseInt(txt);
-        const movie = movies.find(m => m.number === idx);
-        if (!movie) return reply("❌ Invalid selection!");
+            // Ensure it's a reply to our sent message
+            if (message.message.extendedTextMessage.contextInfo?.stanzaId === sentMessage.key.id) {
+                const index = parseInt(userReply) - 1;
+                if (isNaN(index) || index < 0 || index >= data.length) return;
 
-        const detailRes = await axios.get(`${API}/movie/sinhalasub/movie?url=${movie.link}`);
-        const data = detailRes.data?.result?.data;
-        if (!data) return reply("❌ Movie details not found!");
-
-        const title = data.title || movie.title; // fallback if title is missing
-
-        const allLinks = [...data.pixeldrain_dl, ...data.ddl_dl].map((dl, i) => ({
-          number: i + 1,
-          quality: dl.quality,
-          size: dl.size,
-          url: dl.link
-        }));
-
-        if (!allLinks.length) return reply("❌ No download links available!");
-
-        let detailText = `*🎬 ${title}*\n
-🗓️ *Year ➛* ${data.date}
-🌍 *Country ➛* ${data.country}
-🎭 *Genres ➛* ${data.category.join(', ')}
-⭐ *IMDB ➛* ${data.tmdbRate}
-🤵‍♂ *Director ➛* ${data.director}
-✍ *Subtitle by ➛* ${data.subtitle_author}
-
-${CREATER}`;
-
-        await conn.sendMessage(from, {
-          image: { url: data.images[0] },
-          caption: detailText
-        }, { quoted: message });
-
-        let qualityText = `*📥 Choose quality for:* *${title}*\n\n`;
-        allLinks.forEach(dl => qualityText += `*${dl.number}* ➜ ${dl.quality} (${dl.size})\n`);
-        qualityText += CREATER;
-
-        const sentQuality = await conn.sendMessage(from, {
-          text: qualityText
-        }, { quoted: message });
-
-        downloadMap.set(sentQuality.key.id, { title, links: allLinks });
-      }
-
-      else if (downloadMap.has(replyId)) {
-        const { title, links } = downloadMap.get(replyId);
-        const link = links.find(l => l.number === parseInt(txt));
-        if (!link) return reply("❌ Invalid quality selection!");
-
-        await conn.sendMessage(from, {
-          react: { text: "⬆️", key: message.key }
+                const movieLink = data[index].Link;
+                await subinHandler(conn, message, movieLink, from);
+            }
         });
 
-        const sizeStr = link.size.toLowerCase();
-        let sizeInGB = 0;
-        if (sizeStr.includes("gb")) {
-          sizeInGB = parseFloat(sizeStr.replace("gb", "").trim());
-        } else if (sizeStr.includes("mb")) {
-          sizeInGB = parseFloat(sizeStr.replace("mb", "").trim()) / 1024;
-        }
-
-        if (sizeInGB > 2) {
-          return conn.sendMessage(from, {
-            text: `⚠ File Too Large\n\nFile size: ${link.size}\nThis file is too large to send directly.\n\n*Direct Download Link:*\n${link.url}${CREATER}`
-          }, { quoted: message });
-        }
-
-        await conn.sendMessage(from, {
-          document: { url: link.url },
-          mimetype: "video/mp4",
-          fileName: `${title} - ${link.quality}.mp4`,
-          caption: `🎬 ${title} \n\n\`[WEB] ${link.quality}\`\n${CREATER}`
-        }, { quoted: message });
-
-        await conn.sendMessage(from, { react: { text: "✅", key: message.key } });
-      }
-    };
-
-    conn.ev.on("messages.upsert", handler);
-
-  } catch (err) {
-    console.error("SinhalaSub Error:", err);
-    reply("❌ An error occurred while processing your request.");
-  }
+    } catch (e) {
+        console.log(e);
+        return reply('*❌ Error fetching search results!*');
+    }
 });
-*/
 
+// Subin handler function
+async function subinHandler(conn, mek, movieLink, from) {
+    try {
+        const response = await axios.get(movieLink);
+        const $ = cheerio.load(response.data);
+
+        const newsArticle = $(".sheader").first();
+        const title = newsArticle.find(".data .head h1").text();
+        const date = newsArticle.find(".extra .date").text().trim();
+        const duration = newsArticle.find(".extra .runtime").text().trim();
+        const desc = $("#info .wp-content p").text().trim();
+        const rating = $("#info #repimdb strong").text().trim();
+        const img = $("#info #dt_galery .owl-item a").attr("src");
+
+        // Collect download links
+        let download_links = [];
+        $("#download > div > div > table > tbody > tr").each((i, el) => {
+            download_links.push({
+                quality: $(el).find("td > strong").text(),
+                size: $(el).find("td").eq(2).text(),
+                link: $(el).find("td > a").attr("href"),
+            });
+        });
+
+        if (download_links.length < 1) return conn.sendMessage(from, { text: "❌ No download links found!" }, { quoted: mek });
+
+        // Pixeldrain API link converter
+        const getPixeldrainAPI = async (link) => {
+            try {
+                const res = await axios.get(link);
+                const $ = cheerio.load(res.data);
+                const pageLink = $("#link").attr("href");
+                if (!pageLink) return null;
+                const id = pageLink.split("https://pixeldrain.com/u/")[1];
+                return id ? `https://pixeldrain.com/api/file/${id}` : null;
+            } catch (err) {
+                console.log('Pixeldrain fetch error:', err);
+                return null;
+            }
+        };
+
+        // Try FHD → HD → SD
+        let downloadURL = null;
+        for (let i = 0; i < download_links.length; i++) {
+            const apiLink = await getPixeldrainAPI(download_links[i].link);
+            if (apiLink) {
+                downloadURL = apiLink;
+                break;
+            }
+        }
+
+        if (!downloadURL) return conn.sendMessage(from, { text: "❌ No downloadable links found!" }, { quoted: mek });
+
+        // Send movie info + image
+        let msgInfo = `🎬 *${title}*\n\n`;
+        msgInfo += `📅 Year: ${date}\n`;
+        msgInfo += `⏳ Duration: ${duration}\n`;
+        msgInfo += `💫 Rating: ${rating}\n`;
+        msgInfo += `📝 Description: ${desc}\n\n`;
+        msgInfo += `📥 Downloading movie...`;
+
+        await conn.sendMessage(from, { image: { url: img }, caption: msgInfo }, { quoted: mek });
+
+        // Download and send the movie
+        const responseFile = await axios.get(downloadURL, { responseType: 'arraybuffer' });
+        const mediaBuffer = Buffer.from(responseFile.data, 'binary');
+
+        const docMsg = {
+            document: mediaBuffer,
+            caption: `🎬 *${title}*`,
+            mimetype: "video/mp4",
+            fileName: `${title}.mp4`,
+        };
+        await conn.sendMessage(from, docMsg, { quoted: mek });
+        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+
+    } catch (e) {
+        console.log(e);
+        await conn.sendMessage(from, { text: '*❌ Error fetching or sending movie!*' }, { quoted: mek });
+    }
+}
 
 //===================OWNER COMMAND======================
 
