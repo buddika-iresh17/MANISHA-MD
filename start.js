@@ -2874,7 +2874,7 @@ cmd({
         if (!q) return reply("❌ Please provide a movie or show name.\nUsage: .cinesubz <name>");
 
         // 1️⃣ Search API
-        const searchUrl = `https://manojapi.infinityapi.org/api/v1/cinesubz-search?q=${encodeURIComponent(q)}&apiKey=89eaacfc-67b1-4668-8b14-dc23d5b33a70`;
+        const searchUrl = `https://manojapi.infinityapi.org/api/v1/cinesubz-search?q=${encodeURIComponent(q)}&apiKey=5d761eb1-813f-48f1-bd4f-4b04340df67a`;
         const searchRes = await axios.get(searchUrl);
         const results = searchRes.data.results;
 
@@ -2901,7 +2901,7 @@ cmd({
             const selected = results[choice - 1];
 
             // 2️⃣ Download info API
-            const downloadUrl = `https://manojapi.infinityapi.org/api/v1/cinesubz-download?url=${encodeURIComponent(selected.link)}&apiKey=89eaacfc-67b1-4668-8b14-dc23d5b33a70`;
+            const downloadUrl = `https://manojapi.infinityapi.org/api/v1/cinesubz-download?url=${encodeURIComponent(selected.link)}&apiKey=5d761eb1-813f-48f1-bd4f-4b04340df67a`;
             const downloadRes = await axios.get(downloadUrl);
             const dl = downloadRes.data.results;
 
