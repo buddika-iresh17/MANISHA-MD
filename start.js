@@ -1241,7 +1241,7 @@ if (!fs.existsSync(sessionFile)) {
   if (!config.SESSION_ID) {
     console.log('🌀 ᴍᴀɴɪꜱʜᴀ-ᴍᴅ 💕 Please add your session id in config.SESSION_ID! 😥...');
   } else {
-    const sessdata = config.SESSION_ID;
+    const sessdata = config.SESSION_ID.replace("manaofc~", "");
     const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
     filer.download((err, data) => {
       if (err) throw err;
@@ -1508,8 +1508,8 @@ function cmd(info, func) {
 
 // Detect command
 //=========== BOT COUSTOM ==================
-const BOT = "MANISHA-MD"; //Use these letters.
-const CREATER = "> _*created by manisha coder*_"; //Use these letters.
+const BOT = "MANISHA-MD"; //බොට් එකෙ නම
+const CREATER = "> _*Powered By manaofc*_"; // බොට් එක හදපු එක්කෙනාගෙ නම
 //================SETTINGS COMMAND===================
 
 const settingsMap = {
@@ -1754,7 +1754,7 @@ cmd({
     react: "🎵",
     category: "download",
     filename: __filename
-}, async (messageHandler, context, quotedMessage, { from, reply, q }) => {
+}, async (conn, context, mek, { from, reply, q }) => {
   try {
         q = convertYouTubeLink(q);
         if (!q) return reply("*Please provide song name or url*");
@@ -1779,13 +1779,13 @@ cmd({
 ${CREATER}`;
 
         // ℹ️ Send track info
-        const sentMessage = await messageHandler.sendMessage(from, {
+        const sentMessage = await conn.sendMessage(from, {
             image: { url: data.thumbnail },
             caption: desc
-        }, { quoted: quotedMessage });
+        }, { quoted: mek });
     
         // Listen for the user's reply to select the download format
-        messageHandler.ev.on("messages.upsert", async (update) => {
+        conn.ev.on("messages.upsert", async (update) => {
             const message = update.messages[0];
             if (!message.message || !message.message.extendedTextMessage) return;
 
@@ -1794,7 +1794,7 @@ ${CREATER}`;
             // Ensure it's a reply to the bot's menu message
             if (message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id) {
                 
-                await messageHandler.sendMessage(from, { 
+                await conn.sendMessage(from, { 
                     react: { text: "⬆️", key: message.key } 
                 });
 
@@ -1803,11 +1803,11 @@ ${CREATER}`;
                 switch (userReply) {
                     case '1': 
                         // Audio File
-                        await messageHandler.sendMessage(from, { react: { text: '⬇️', key: message.key } });
+                        await conn.sendMessage(from, { react: { text: '⬇️', key: message.key } });
                         result = await ytmp3(url, 'mp3');
                         downloadLink = result.downloadUrl;
 
-                        await messageHandler.sendMessage(from, { 
+                        await conn.sendMessage(from, { 
                             audio: { url: downloadLink }, 
                             mimetype: "audio/mpeg",
                             contextInfo: {
@@ -1821,30 +1821,30 @@ ${CREATER}`;
                                     showAdAttribution: false
                                 }
                             }
-                        }, { quoted: quotedMessage });
+                        }, { quoted: mek });
                         break;
 
                     case '2':
                         // Document File
-                        await messageHandler.sendMessage(from, { react: { text: '⬇️', key: message.key } });
+                        await conn.sendMessage(from, { react: { text: '⬇️', key: message.key } });
                         result = await ytmp3(url, 'mp3');
                         downloadLink = result.downloadUrl;
 
-                        await messageHandler.sendMessage(from, {
+                        await conn.sendMessage(from, {
                             document: { url: downloadLink },
                             mimetype: "audio/mp3",
                             fileName: `${data.title}.mp3`,
                             caption: `${CREATER}`
-                        }, { quoted: quotedMessage });
+                        }, { quoted: mek });
                         break;
 
                     case '3':
                         // Voice Note
-                        await messageHandler.sendMessage(from, { react: { text: '⬇️', key: message.key } });
+                        await conn.sendMessage(from, { react: { text: '⬇️', key: message.key } });
                         result = await ytmp3(url, 'mp3');
                         downloadLink = result.downloadUrl;
 
-                        await messageHandler.sendMessage(from, { 
+                        await conn.sendMessage(from, { 
                             audio: { url: downloadLink }, 
                             mimetype: "audio/mpeg",
                             ptt: true,
@@ -1859,7 +1859,7 @@ ${CREATER}`;
                                     showAdAttribution: false
                                 }
                             }
-                        }, { quoted: quotedMessage });
+                        }, { quoted: mek });
                         break;
 
                     default:
@@ -1873,6 +1873,7 @@ ${CREATER}`;
         reply(`❌ Error: ${e.message}`);
     }
 });
+
 //============ video download ================
 
 cmd({
@@ -1988,7 +1989,9 @@ ${CREATER}`;
         reply(`❌ Error: ${e.message}`);
     }
 });
+
 //============= spotify ================
+
 cmd({
     pattern: "spotify",
     alias: ["sp", "spotifydl"],
@@ -1997,7 +2000,7 @@ cmd({
     category: "download",
     use: '.spotify <search term>',
     filename: __filename
-}, async (messageHandler, context, quotedMessage, { from, reply, q }) => {
+}, async (conn, context, mek, { from, reply, q }) => {
     try {
         if (!q) return reply("❗ Please provide a search term!");
 
@@ -2061,13 +2064,13 @@ ${CREATER}
         `.trim();
 
         // ℹ️ Send track info
-const sentMessage = await messageHandler.sendMessage(from, {
+const sentMessage = await conn.sendMessage(from, {
       image: { url: result.thumbnail },
       caption: msg,
-    }, { quoted: quotedMessage });
+    }, { quoted: mek });
     
     // Listen for the user's reply to select the download format
-    messageHandler.ev.on("messages.upsert", async (update) => {
+    conn.ev.on("messages.upsert", async (update) => {
       const message = update.messages[0];
       if (!message.message || !message.message.extendedTextMessage) return;
 
@@ -2076,30 +2079,30 @@ const sentMessage = await messageHandler.sendMessage(from, {
       // Handle the download format choice
       if (message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id) {
       // React to the user’s reply message directly
-      await messageHandler.sendMessage(from, { 
+      await conn.sendMessage(from, { 
          react: { text: "⬆️", key: message.key } 
         });
         switch (userReply) {
           case '1': // video File
-            await messageHandler.sendMessage(from, {
+            await conn.sendMessage(from, {
               audio: { url: result.download_url },
               mimetype: "audio/mpeg",
               caption: `${CREATER}`
-               }, { quoted: quotedMessage });           
+               }, { quoted: mek });           
       // Change the reaction to once the file upload is complete
-        await messageHandler.sendMessage(from, { 
+        await conn.sendMessage(from, { 
           react: { text: "✅", key: message.key } 
         });
             break;
           case '2': // Document File
-            await messageHandler.sendMessage(from, {
+            await conn.sendMessage(from, {
               document: { url: result.download_url },
               mimetype: "audio/mpeg",
               fileName: `${track.title}.mp3`,
               caption: `${CREATER}`
-            }, { quoted: quotedMessage });
+            }, { quoted: mek });
       // Change the reaction to once the file upload is complete
-        await messageHandler.sendMessage(from, { 
+        await conn.sendMessage(from, { 
           react: { text: "✅", key: message.key } 
         });
             break;
