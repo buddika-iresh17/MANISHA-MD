@@ -2862,104 +2862,149 @@ ${CREATER}`;
 
 //========== cinesubz download ===========
 
-
+const API_KEY = "5d761eb1-813f-48f1-bd4f-4b04340df67a";
 
 cmd({
-    pattern: "cinesubz",
-    alias: ["csdl"],
-    react: "📥",
-    desc: "Search and download CineSubz movies/TV shows",
-    category: "download",
-    use: ".cinesubz <movie name>",
-    filename: __filename
-}, async (conn, context, quotedMessage, { from, reply, q }) => {
-    try {
-        if (!q) return reply("❌ Please provide a movie or show name.\nUsage: .cinesubz <name>");
+  pattern: "cinesubz",
+  alias: ["csdl"],
+  react: "📥",
+  desc: "Search CineSubz movies/TV and download",
+  category: "download",
+  use: ".cinesubz <movie name>",
+  filename: __filename
+}, async (conn, m, quoted, { from, reply, q }) => {
+  try {
+    if (!q) return reply("❌ Usage: .cinesubz <movie name>");
 
-        // 1️⃣ Search API
-        const searchUrl = `https://manojapi.infinityapi.org/api/v1/cinesubz-search?q=${encodeURIComponent(q)}&apiKey=5d761eb1-813f-48f1-bd4f-4b04340df67a`;
-        const searchRes = await axios.get(searchUrl);
-        const results = searchRes.data.results;
+    // 🔍 1. Search CineSubz
+    const searchUrl = `https://manojapi.infinityapi.org/api/v1/cinesubz-search?q=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
+    const searchRes = await axios.get(searchUrl);
+    const results = searchRes.data.results;
 
-        if (!results || results.length === 0) return reply("❌ No results found!");
+    if (!results || results.length === 0) return reply("❌ No results found!");
 
-        // Send search results
-        let listMsg = `🎬 *Search results for:* ${q}\n\n`;
-        results.forEach((item, i) => {
-            const type = item.movie ? "Movie" : "TV Show";
-            listMsg += `${i + 1}. ${item.link}\nType: ${type}\nIMDB: ${item.imdb}\n\n`;
-        });
-        listMsg += "Reply with the number of the movie/episode you want to download.";
-        await conn.sendMessage(from, { text: listMsg });
+    // Show results
+    let listMsg = `🎬 *Search results for:* ${q}\n\n`;
+    results.forEach((item, i) => {
+      listMsg += `${i + 1}. ${item.title || item.link}\n   🔗 ${item.link}\n\n`;
+    });
+    listMsg += `👉 Reply to *this message* with the number (1-${results.length}) to view details.`;
 
-        // Listen for user's reply
-        const handler = async (update) => {
-            const message = update.messages[0];
-            if (!message.message || !message.message.extendedTextMessage) return;
-            const userReply = message.message.extendedTextMessage.text.trim();
-            const choice = parseInt(userReply);
+    const sentMsg = await conn.sendMessage(from, { text: listMsg }, { quoted: m });
 
-            if (isNaN(choice) || choice < 1 || choice > results.length) return reply("❌ Invalid selection!");
+    // 📨 Listen for reply
+    const handler = async (update) => {
+      try {
+        const msg = update.messages[0];
+        if (!msg.message?.extendedTextMessage) return;
+        if (msg.message.extendedTextMessage.contextInfo?.stanzaId !== sentMsg.key.id) return; // must reply to bot's search msg
 
-            const selected = results[choice - 1];
+        const choice = parseInt(msg.message.extendedTextMessage.text.trim());
+        if (isNaN(choice) || choice < 1 || choice > results.length) {
+          return conn.sendMessage(from, { text: "❌ Invalid number!" }, { quoted: msg });
+        }
 
-            // 2️⃣ Download info API
-            const downloadUrl = `https://manojapi.infinityapi.org/api/v1/cinesubz-download?url=${encodeURIComponent(selected.link)}&apiKey=5d761eb1-813f-48f1-bd4f-4b04340df67a`;
-            const downloadRes = await axios.get(downloadUrl);
-            const dl = downloadRes.data.results;
+        const selected = results[choice - 1];
+        await conn.sendMessage(from, { text: `⏳ Fetching info for:\n${selected.link}` }, { quoted: msg });
 
-            // Decide which URL to download (direct > gdrive1 > gdrive2)
-            let videoUrl = dl.direct || dl.gdrive1 || dl.gdrive2;
-            if (!videoUrl) return reply("❌ No downloadable video link found!");
+        // 🎥 2. Movie Info API
+        const infoUrl = `https://manojapi.infinityapi.org/api/v1/cinesubz-movie?url=${encodeURIComponent(selected.link)}&apiKey=${API_KEY}`;
+        const infoRes = await axios.get(infoUrl);
+        const movie = infoRes.data.results;
 
-            // Download video to temp folder
-            const tempPath = join(tmpdir(), dl.name);
+        if (!movie) return conn.sendMessage(from, { text: "❌ No movie info found." }, { quoted: msg });
+
+        // Caption
+        let caption = `🎬 *${movie.title}*\n`;
+        caption += `🗓️ Release: ${movie.release_date}\n`;
+        caption += `🌍 Country: ${movie.country}\n`;
+        caption += `⏱️ Duration: ${movie.duration}\n`;
+        caption += `⭐ IMDb: ${movie.IMDb_Rating}\n`;
+        caption += `📜 Subs: ${movie.subtitle_author}\n\n`;
+        caption += `_${movie.tagline}_\n\n`;
+        caption += `${movie.banners}\n\n`;
+
+        if (movie.dl_links && movie.dl_links.length > 0) {
+          caption += `📥 *Available Downloads:*\n\n`;
+          movie.dl_links.forEach((dl, i) => {
+            caption += `${i + 1}. ${dl.quality} | ${dl.size} | ${dl.language}\n\n`;
+          });
+          caption += `👉 Reply with number (1-${movie.dl_links.length}) to choose quality.`;
+        } else {
+          caption += "❌ No download links found!";
+        }
+
+        const movieMsg = await conn.sendMessage(from, {
+          image: { url: movie.thumb?.url || "" },
+          caption: caption
+        }, { quoted: msg });
+
+        // Second listener → choose quality
+        const dlHandler = async (update2) => {
+          try {
+            const msg2 = update2.messages[0];
+            if (!msg2.message?.extendedTextMessage) return;
+            if (msg2.message.extendedTextMessage.contextInfo?.stanzaId !== movieMsg.key.id) return;
+
+            const choice2 = parseInt(msg2.message.extendedTextMessage.text.trim());
+            if (isNaN(choice2) || choice2 < 1 || choice2 > movie.dl_links.length) {
+              return conn.sendMessage(from, { text: "❌ Invalid choice!" }, { quoted: msg2 });
+            }
+
+            const dl = movie.dl_links[choice2 - 1];
+            const videoUrl = dl.link;
+
+            // ⚠️ Check size (skip sending >100MB)
+            if (dl.size.includes("GB") || parseFloat(dl.size) > 95) {
+              return conn.sendMessage(from, {
+                text: `⚠️ File too large for WhatsApp.\n\n${dl.quality} (${dl.size})\n🔗 ${videoUrl}`
+              }, { quoted: msg2 });
+            }
+
+            // Try downloading small file
+            const tempPath = join(tmpdir(), `${dl.quality}.mp4`);
             const writer = fs.createWriteStream(tempPath);
-
-            const response = await axios({
-                url: videoUrl,
-                method: 'GET',
-                responseType: 'stream'
-            });
-
+            const response = await axios({ url: videoUrl, method: "GET", responseType: "stream" });
             response.data.pipe(writer);
 
-            writer.on('finish', async () => {
-                try {
-                    // Send video to WhatsApp
-                    await conn.sendMessage(from, {
-                        video: { url: tempPath },
-                        caption: `🎬 ${dl.name}\nSize: ${dl.size}`
-                    });
-                    fs.unlinkSync(tempPath); // delete temp file
-                } catch (err) {
-                    console.log(err);
-                    reply("❌ Failed to send video. File might be too large for WhatsApp. Sending links instead.\n" +
-                        `📁 GDrive1: ${dl.gdrive1 || "N/A"}\n` +
-                        `📁 GDrive2: ${dl.gdrive2 || "N/A"}\n` +
-                        `⚡ Direct: ${dl.direct || "N/A"}\n` +
-                        `🖼 Pixeldrain: ${dl.pix1 || dl.pix2 || "N/A"}`
-                    );
-                }
+            writer.on("finish", async () => {
+              try {
+                await conn.sendMessage(from, {
+                  video: { url: tempPath },
+                  caption: `🎬 ${movie.title}\nQuality: ${dl.quality}\nSize: ${dl.size}`
+                }, { quoted: msg2 });
+                fs.unlinkSync(tempPath);
+              } catch (err) {
+                console.log("Send error:", err.message);
+                await conn.sendMessage(from, { text: `🔗 ${videoUrl}` }, { quoted: msg2 });
+              }
             });
 
-            writer.on('error', (err) => {
-                console.log(err);
-                reply("❌ Error downloading video.");
-            });
+            writer.on("error", () => conn.sendMessage(from, { text: "❌ Error downloading file." }, { quoted: msg2 }));
 
-            // Remove listener
-            conn.ev.on("messages.upsert", handler);
+            conn.ev.on("messages.upsert", dlHandler); // remove listener
+
+          } catch (err) {
+            console.error("DL Handler error:", err.message);
+          }
         };
 
-        conn.ev.on("messages.upsert", handler);
+        conn.ev.on("messages.upsert", dlHandler);
 
-    } catch (e) {
-        console.log(e);
-        reply(`❌ Error: ${e.message}`);
-    }
+        conn.ev.on("messages.upsert", handler); // remove search listener
+
+      } catch (err) {
+        console.error("Handler error:", err.message);
+      }
+    };
+
+    conn.ev.on("messages.upsert", handler);
+
+  } catch (e) {
+    console.log("Command error:", e.message);
+    reply(`❌ Error: ${e.message}`);
+  }
 });
-
 //===================OWNER COMMAND======================
 
 //============ restsrt =============
