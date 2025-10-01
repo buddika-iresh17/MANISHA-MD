@@ -2954,8 +2954,8 @@ cmd({
             const dl = movie.dl_links[choice2 - 1];
             const videoUrl = dl.link;
 
-            // ⚠️ Check size (skip sending >100MB)
-            if (dl.size.includes("GB") || parseFloat(dl.size) > 95) {
+            // ⚠️ Check size (skip sending >2gb)
+            if (dl.size.includes("GB") || parseFloat(dl.size) > 2000) {
               return conn.sendMessage(from, {
                 text: `⚠️ File too large for WhatsApp.\n\n${dl.quality} (${dl.size})\n🔗 ${videoUrl}`
               }, { quoted: msg2 });
