@@ -8,5 +8,6 @@ function convertToBool(text, fault = 'true') {
 module.exports = {
     SESSION_ID: process.env.SESSION_ID || "manaofc~7Vd3RZZY#71wspZuFggq7xsF4KSyeCxjHSnYCIsvvQwGxn6n6h2U", //(manaofc~ ) මෙහෙම තියන එක අයින් කරන්නෙ නැතුව සිසන් අයිඩ් එක දාන්න
     OWNER_NUMBER: process.env.OWNER_NUMBER || "94721551183",
+    PREFIX: process.env.PREFIX || ".", // command prefix
     };
     
