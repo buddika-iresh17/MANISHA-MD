@@ -92,7 +92,7 @@ var videotime = 60000; // 1000 min
 // 📁 Directories
 const storeDir = path.join(process.cwd(), 'start');
   //======================
-  const prefix = config.PREFIX
+  const prefix = settings.PREFIX
   //===================
   const ownerNumber = settings.OWNER_NUMBER
 //======================================
